@@ -22,7 +22,7 @@ jobs:
       package-manager: npm
       install-command: npm ci
       cache: npm
-      scripts: '["lint","test"]'
+      scripts: '["lint","test","build"]'
   # Added by hand (repokeeper leaves it alone): runs the action itself, as another repository would.
   action:
     runs-on: ubuntu-latest

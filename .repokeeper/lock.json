@@ -135,7 +135,7 @@
     {
       "id": "file:release-please-config.json",
       "module": "release",
-      "hash": "dc57f64e68539030949884655c6339a7dbaaac16a2f15949a0645369b7afafd1",
+      "hash": "08f9b60d3eebf0bf99082da9dbe7188f487e82d1a231faa2bb99321b7176366a",
       "target": {
         "kind": "file",
         "path": "release-please-config.json"
@@ -226,7 +226,7 @@
     {
       "id": "yaml:.github/workflows/ci.yml#[\"jobs\",\"node\"]",
       "module": "ci",
-      "hash": "ad91ecd0fe0e4ad425a31e8be7eaffeb511e141d57a0e36562c253a867966d0a",
+      "hash": "41fc372938202d84bc9b1b3aaeb845bf7ec74e63d990a0fb8a528e3039002d21",
       "target": {
         "kind": "yaml",
         "path": ".github/workflows/ci.yml",
