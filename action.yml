@@ -1,0 +1,51 @@
+name: MV3 remote code check
+description: Reads a built browser extension (folder, .zip or .crx) the way the Chrome Web Store review does and fails on remotely hosted code.
+author: Van Nguyen
+branding:
+  icon: shield
+  color: green
+
+inputs:
+  path:
+    description: The built extension to check, one path a line (a folder, a .zip or a .crx).
+    required: true
+  allow:
+    description: Findings to leave out, one text a line; a finding that contains the text is not reported.
+    required: false
+    default: ''
+  exclude:
+    description: Files to leave out, one glob a line (* is one path segment, ** any number).
+    required: false
+    default: ''
+  fail:
+    description: Set to 'false' to report findings without failing the job.
+    required: false
+    default: 'true'
+
+outputs:
+  found:
+    description: "'true' when remotely hosted code was found."
+    value: ${{ steps.check.outputs.found }}
+
+runs:
+  using: composite
+  steps:
+    - id: check
+      shell: bash
+      env:
+        INPUT_PATH: ${{ inputs.path }}
+        INPUT_ALLOW: ${{ inputs.allow }}
+        INPUT_EXCLUDE: ${{ inputs.exclude }}
+        INPUT_FAIL: ${{ inputs.fail }}
+      # No install: the checker has no dependencies and runs from the action's own checkout.
+      run: |
+        args=()
+        while IFS= read -r line; do [ -n "$line" ] && args+=("$line"); done <<< "$INPUT_PATH"
+        while IFS= read -r line; do [ -n "$line" ] && args+=(--allow "$line"); done <<< "$INPUT_ALLOW"
+        while IFS= read -r line; do [ -n "$line" ] && args+=(--exclude "$line"); done <<< "$INPUT_EXCLUDE"
+        set +e
+        node "$GITHUB_ACTION_PATH/bin/mv3-remote-code-check.js" "${args[@]}" --format github --summary "$GITHUB_STEP_SUMMARY"
+        code=$?
+        set -e
+        if [ "$code" = 1 ]; then echo "found=true" >> "$GITHUB_OUTPUT"; else echo "found=false" >> "$GITHUB_OUTPUT"; fi
+        if [ "$code" = 2 ] || { [ "$code" = 1 ] && [ "$INPUT_FAIL" != false ]; }; then exit 1; fi

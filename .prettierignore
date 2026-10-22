@@ -1,0 +1,14 @@
+node_modules/
+test/fixtures/
+CHANGELOG.md
+# managed by repokeeper, formatted its way
+.repokeeper/
+.repokeeper.yml
+.github/
+.release-please-manifest.json
+release-please-config.json
+commitlint.config.mjs
+lefthook.yml
+CODE_OF_CONDUCT.md
+CONTRIBUTING.md
+SECURITY.md

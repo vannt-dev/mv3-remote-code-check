@@ -1,0 +1,71 @@
+/** @typedef {import('./scan.js').Finding} Finding */
+
+const RULE_TEXT = {
+  'cdn-address': 'address on a script CDN',
+  'remote-script-file': 'script file on another host',
+  'script-tag': 'script tag naming another host',
+  'script-tag-built': 'script tag whose address is built at run time',
+  'manifest-csp': 'content security policy allows outside scripts',
+};
+
+const where = (f) => `${f.file}${f.line ? `:${f.line}:${f.column}` : ''}`;
+const shorten = (text, max = 160) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
+
+/**
+ * @param {string} target
+ * @param {{ files: number, findings: Finding[] }} result
+ */
+export function formatText(target, { files, findings }) {
+  if (!findings.length) return `${target}: no remotely hosted code in ${files} files\n`;
+  const lines = findings.map((f) => `  ${where(f)}  ${shorten(f.match)}  (${RULE_TEXT[f.rule] ?? f.rule})`);
+  return `${target}: ${findings.length} reference(s) to remotely hosted code, which Manifest V3 forbids\n` + `${lines.join('\n')}\n`;
+}
+
+export function formatJson(target, result) {
+  return `${JSON.stringify({ target, ...result }, null, 2)}\n`;
+}
+
+/**
+ * GitHub workflow commands. `fileRoot` is the scanned folder's path from the repository root, so
+ * an annotation lands on the file; for an archive there is no such file and the target is named
+ * in the message instead.
+ * @param {string} target
+ * @param {{ files: number, findings: Finding[] }} result
+ * @param {string | null} fileRoot
+ */
+export function formatGithub(target, { files, findings }, fileRoot) {
+  const out = findings.map((f) => {
+    const props = [];
+    if (fileRoot !== null) {
+      props.push(`file=${escapeProperty(joinPath(fileRoot, f.file))}`);
+      if (f.line) props.push(`line=${f.line}`, `col=${f.column}`);
+    }
+    props.push(`title=${escapeProperty(`Remote code: ${RULE_TEXT[f.rule] ?? f.rule}`)}`);
+    const place = fileRoot === null ? `${target}!/${where(f)}: ` : '';
+    return `::error ${props.join(',')}::${escapeData(`${place}${shorten(f.match, 300)}`)}`;
+  });
+  out.push(formatText(target, { files, findings }).trimEnd());
+  return `${out.join('\n')}\n`;
+}
+
+export function formatMarkdown(target, { files, findings }) {
+  if (!findings.length) return `### Remote code check\n\n\`${target}\`: no remotely hosted code in ${files} files.\n`;
+  const rows = findings.map(
+    (f) => `| \`${where(f)}\` | ${RULE_TEXT[f.rule] ?? f.rule} | \`${shorten(f.match, 120).replaceAll('|', '\\|')}\` |`
+  );
+  return (
+    `### Remote code check\n\n\`${target}\`: **${findings.length}** reference(s) to remotely hosted code, ` +
+    `which Manifest V3 forbids.\n\n| Where | What | Found |\n| --- | --- | --- |\n${rows.join('\n')}\n`
+  );
+}
+
+function joinPath(root, file) {
+  const clean = root
+    .replace(/\\/g, '/')
+    .replace(/^\.\/?/, '')
+    .replace(/\/$/, '');
+  return clean ? `${clean}/${file}` : file;
+}
+
+const escapeData = (s) => s.replace(/%/g, '%25').replace(/\r/g, '%0D').replace(/\n/g, '%0A');
+const escapeProperty = (s) => escapeData(s).replace(/:/g, '%3A').replace(/,/g, '%2C');

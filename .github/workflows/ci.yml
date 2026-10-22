@@ -1,0 +1,46 @@
+# Managed by repokeeper (https://github.com/vannt-dev/repokeeper). Edits are reported by `repokeeper check`. Keys and jobs you add yourself are left alone.
+
+name: ci
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+permissions:
+  contents: read
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  commits:
+    uses: vannt-dev/repokeeper/.github/workflows/commitlint.yml@v0
+  node:
+    uses: vannt-dev/repokeeper/.github/workflows/stack-node.yml@v0
+    with:
+      node-versions: '["22","24"]'
+      os: '["ubuntu-latest"]'
+      package-manager: npm
+      install-command: npm ci
+      cache: npm
+      scripts: '["lint","test"]'
+  # Added by hand (repokeeper leaves it alone): runs the action itself, as another repository would.
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - id: clean
+        uses: ./
+        with:
+          path: test/fixtures/clean
+      - id: remote
+        uses: ./
+        with:
+          path: test/fixtures/remote
+          fail: 'false'
+      - name: The clean package passes and the remote one is caught
+        env:
+          CLEAN: ${{ steps.clean.outputs.found }}
+          REMOTE: ${{ steps.remote.outputs.found }}
+        run: |
+          test "$CLEAN" = false
+          test "$REMOTE" = true

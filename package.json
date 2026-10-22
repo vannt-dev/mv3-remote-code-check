@@ -1,0 +1,56 @@
+{
+  "name": "mv3-remote-code-check",
+  "version": "0.0.0",
+  "description": "Reads a built browser extension the way the Chrome Web Store review does and fails on remotely hosted code (Manifest V3), as a CLI, a GitHub Action and a Vite plugin.",
+  "keywords": [
+    "chrome-extension",
+    "manifest-v3",
+    "mv3",
+    "chrome-web-store",
+    "remote-code",
+    "browser-extension",
+    "vite-plugin",
+    "github-action"
+  ],
+  "homepage": "https://github.com/vannt-dev/mv3-remote-code-check#readme",
+  "bugs": {
+    "url": "https://github.com/vannt-dev/mv3-remote-code-check/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vannt-dev/mv3-remote-code-check.git"
+  },
+  "license": "MIT",
+  "author": "Van Nguyen",
+  "type": "module",
+  "bin": {
+    "mv3-remote-code-check": "bin/mv3-remote-code-check.js"
+  },
+  "exports": {
+    ".": "./src/index.js",
+    "./vite": "./src/vite.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "bin",
+    "src"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "lint": "eslint . && prettier --check .",
+    "test": "node --test \"test/*.test.js\"",
+    "format": "prettier --write .",
+    "check": "npm run lint && npm test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.10",
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "lefthook": "^2.2.1"
+  }
+}

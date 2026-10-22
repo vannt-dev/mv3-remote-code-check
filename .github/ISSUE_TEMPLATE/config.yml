@@ -1,0 +1,6 @@
+# Managed by repokeeper (https://github.com/vannt-dev/repokeeper). Edits are reported by `repokeeper check`.
+blank_issues_enabled: false
+contact_links:
+  - name: Report a security vulnerability
+    url: https://github.com/vannt-dev/mv3-remote-code-check/security/advisories/new
+    about: Please report vulnerabilities privately.

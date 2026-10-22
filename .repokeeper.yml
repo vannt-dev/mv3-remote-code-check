@@ -1,0 +1,23 @@
+# repokeeper configuration: https://github.com/vannt-dev/repokeeper
+schema: 1
+standard: 1.4.4
+platform: github
+stacks:
+  - node
+modules:
+  editorconfig: true
+  commits: true
+  hooks: true
+  ci: true
+  release: true
+  deps: true
+  gitignore: true
+  drift: false
+  health:
+    license: MIT
+    copyright: 2026 Van Nguyen
+    contact: https://github.com/vannt-dev
+    codeowners:
+      - "@vannt-dev"
+owned: []
+stack_options: {}
