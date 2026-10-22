@@ -26,31 +26,44 @@
   "bin": {
     "mv3-remote-code-check": "bin/mv3-remote-code-check.js"
   },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "exports": {
-    ".": "./src/index.js",
-    "./vite": "./src/vite.js",
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./vite": {
+      "types": "./dist/vite.d.ts",
+      "default": "./dist/vite.js"
+    },
     "./package.json": "./package.json"
   },
   "files": [
     "bin",
-    "src"
+    "dist"
   ],
   "engines": {
-    "node": ">=22"
+    "node": ">=22.18"
   },
   "scripts": {
-    "lint": "eslint . && prettier --check .",
-    "test": "node --test \"test/*.test.js\"",
+    "build": "tsc -p tsconfig.build.json",
+    "test": "npm run build && node --test \"test/*.test.ts\"",
+    "lint": "eslint . && tsc --noEmit && prettier --check .",
     "format": "prettier --write .",
-    "check": "npm run lint && npm test"
+    "check": "npm run lint && npm test",
+    "prepack": "npm run build"
   },
   "devDependencies": {
-    "@eslint/js": "^10.0.1",
-    "eslint": "^10.13.0",
-    "globals": "^17.13.0",
-    "prettier": "^3.9.10",
     "@commitlint/cli": "^21.2.3",
     "@commitlint/config-conventional": "^21.2.3",
-    "lefthook": "^2.2.1"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^22.20.5",
+    "eslint": "^10.13.0",
+    "globals": "^17.13.0",
+    "lefthook": "^2.2.1",
+    "prettier": "^3.9.10",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.0"
   }
 }

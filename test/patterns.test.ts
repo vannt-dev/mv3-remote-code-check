@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { findRemoteCode, locateRemoteCode, stripRemoteCode } from '../src/index.js';
+import { findRemoteCode, locateRemoteCode, stripRemoteCode } from '../src/index.ts';
 
 test('finds the address the Chrome Web Store quoted when it rejected a package (jsPDF PDFObject)', () => {
   const code = 'e.src="https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js"';
@@ -23,9 +23,9 @@ test('a script or wasm file on any host counts, with or without a query', () => 
 
 test('script tags naming another host, or built at run time', () => {
   const [tag] = locateRemoteCode('<script async src="https://www.googletagmanager.com/gtag/js?id=G-1"></script>');
-  assert.equal(tag.rule, 'script-tag');
+  assert.equal(tag?.rule, 'script-tag');
   const [built] = locateRemoteCode("w.document.write('<script src=\"' + url + '\"></script>')");
-  assert.equal(built.rule, 'script-tag-built');
+  assert.equal(built?.rule, 'script-tag-built');
 });
 
 test('leaves alone what is not code on another host', () => {
@@ -43,7 +43,7 @@ test('leaves alone what is not code on another host', () => {
 
 test('reports line and column', () => {
   const [found] = locateRemoteCode('a\nbb\n  x="https://unpkg.com/x"');
-  assert.deepEqual([found.line, found.column], [3, 6]);
+  assert.deepEqual([found?.line, found?.column], [3, 6]);
 });
 
 test('stripRemoteCode removes CDN addresses and refuses jsPDF pdfobjectnewwindow', () => {

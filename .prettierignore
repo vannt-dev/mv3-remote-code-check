@@ -1,4 +1,5 @@
 node_modules/
+dist/
 test/fixtures/
 CHANGELOG.md
 # managed by repokeeper, formatted its way

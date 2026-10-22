@@ -1,8 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { scanPath } from './scan.js';
-import { formatGithub, formatJson, formatMarkdown, formatText } from './report.js';
+import { scanPath, type ScanResult } from './scan.ts';
+import { formatGithub, formatJson, formatMarkdown, formatText } from './report.ts';
 
 const USAGE = `usage: mv3-remote-code-check <folder|.zip|.crx>... [options]
 
@@ -19,14 +19,15 @@ options:
   -v, --version    print the version
 `;
 
-/**
- * @param {string[]} argv
- * @param {{ out?: (s: string) => void, err?: (s: string) => void }} [io]
- * @returns {number} the exit code
- */
-export function main(argv, io = {}) {
-  const out = io.out ?? ((s) => process.stdout.write(s));
-  const err = io.err ?? ((s) => process.stderr.write(s));
+export interface Io {
+  out?: (s: string) => void;
+  err?: (s: string) => void;
+}
+
+/** Runs the command line; returns the exit code (0 clean, 1 found, 2 usage or read error). */
+export function main(argv: string[], io: Io = {}): number {
+  const out = io.out ?? ((s: string) => void process.stdout.write(s));
+  const err = io.err ?? ((s: string) => void process.stderr.write(s));
   let args;
   try {
     args = parseArgs({
@@ -42,7 +43,7 @@ export function main(argv, io = {}) {
       },
     });
   } catch (e) {
-    err(`${e.message}\n\n${USAGE}`);
+    err(`${(e as Error).message}\n\n${USAGE}`);
     return 2;
   }
   const { values, positionals } = args;
@@ -51,7 +52,7 @@ export function main(argv, io = {}) {
     return 0;
   }
   if (values.version) {
-    const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+    const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string };
     out(`${pkg.version}\n`);
     return 0;
   }
@@ -65,13 +66,13 @@ export function main(argv, io = {}) {
   }
 
   let failed = false;
-  const reports = [];
+  const reports: string[] = [];
   for (const target of positionals) {
-    let result;
+    let result: ScanResult;
     try {
       result = scanPath(target, { allow: values.allow, exclude: values.exclude });
     } catch (e) {
-      err(`${target}: ${e.message}\n`);
+      err(`${target}: ${(e as Error).message}\n`);
       return 2;
     }
     if (result.findings.length) failed = true;

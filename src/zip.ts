@@ -4,19 +4,23 @@ const END_OF_CENTRAL_DIRECTORY = 0x06054b50;
 const CENTRAL_FILE_HEADER = 0x02014b50;
 const LOCAL_FILE_HEADER = 0x04034b50;
 
+/** A file of a package: a '/'-separated name and a way to read it. */
+export interface PackageFile {
+  name: string;
+  read: () => Buffer | string;
+}
+
 /**
- * The files of a ZIP archive, as { name, read() }, without a dependency. Handles the stored and
- * deflated entries every extension packer writes; ZIP64 and encrypted archives are refused.
- * @param {Buffer} zip
- * @returns {{ name: string, read: () => Buffer }[]}
+ * The files of a ZIP archive, without a dependency. Handles the stored and deflated entries every
+ * extension packer writes; ZIP64 and encrypted archives are refused.
  */
-export function zipEntries(zip) {
+export function zipEntries(zip: Buffer): PackageFile[] {
   const end = findEndOfCentralDirectory(zip);
   const count = zip.readUInt16LE(end + 10);
   const directoryOffset = zip.readUInt32LE(end + 16);
   if (count === 0xffff || directoryOffset === 0xffffffff) throw new Error('ZIP64 archives are not supported');
 
-  const entries = [];
+  const entries: PackageFile[] = [];
   let at = directoryOffset;
   for (let i = 0; i < count; i++) {
     if (zip.readUInt32LE(at) !== CENTRAL_FILE_HEADER) throw new Error('Damaged ZIP: bad central directory');
@@ -46,7 +50,7 @@ export function zipEntries(zip) {
   return entries;
 }
 
-function findEndOfCentralDirectory(zip) {
+function findEndOfCentralDirectory(zip: Buffer): number {
   // The record is 22 bytes plus a comment of at most 65535.
   const lowest = Math.max(0, zip.length - 22 - 0xffff);
   for (let at = zip.length - 22; at >= lowest; at--) {
