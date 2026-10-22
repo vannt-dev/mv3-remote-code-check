@@ -1,0 +1,441 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>mv3-remote-code-check</title>
+    <meta
+      name="description"
+      content="Reads a built browser extension the way the Chrome Web Store review does and fails on remotely hosted code (Manifest V3). CLI, GitHub Action and Vite plugin."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2315803d'/%3E%3Cpath d='M16 6l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V9z' fill='none' stroke='white' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M12 16l3 3 5-6' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
+    />
+    <style>
+      :root {
+        --bg: #ffffff;
+        --fg: #111827;
+        --muted: #4b5563;
+        --line: #e5e7eb;
+        --accent: #15803d;
+        --accent-fg: #ffffff;
+        --code-bg: #0f172a;
+        --code-fg: #e2e8f0;
+        --card: #f9fafb;
+        --red: #f87171;
+        --green: #4ade80;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root:not([data-theme='light']) {
+          --bg: #0b1020;
+          --fg: #e5e7eb;
+          --muted: #9ca3af;
+          --line: #1f2937;
+          --accent: #4ade80;
+          --accent-fg: #0b1020;
+          --code-bg: #111827;
+          --code-fg: #e5e7eb;
+          --card: #111827;
+        }
+      }
+      :root[data-theme='dark'] {
+        --bg: #0b1020;
+        --fg: #e5e7eb;
+        --muted: #9ca3af;
+        --line: #1f2937;
+        --accent: #4ade80;
+        --accent-fg: #0b1020;
+        --code-bg: #111827;
+        --code-fg: #e5e7eb;
+        --card: #111827;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--fg);
+        font:
+          16px/1.6 system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+      }
+      .wrap {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 0 16px;
+      }
+      header {
+        padding: 56px 0 32px;
+      }
+      nav {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+        padding: 16px 0;
+        border-bottom: 1px solid var(--line);
+      }
+      nav a {
+        color: var(--fg);
+        text-decoration: none;
+        margin-left: 16px;
+      }
+      nav .brand {
+        font-weight: 700;
+        margin: 0;
+      }
+      nav select {
+        font: inherit;
+        padding: 4px 8px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: var(--bg);
+        color: var(--fg);
+      }
+      h1 {
+        font-size: clamp(32px, 6vw, 52px);
+        line-height: 1.1;
+        margin: 0 0 16px;
+        letter-spacing: -0.02em;
+      }
+      .lead {
+        font-size: 19px;
+        color: var(--muted);
+        max-width: 720px;
+        margin: 0 0 24px;
+      }
+      .cta {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+      .btn {
+        display: inline-block;
+        padding: 10px 18px;
+        border-radius: 8px;
+        border: 1px solid var(--line);
+        color: var(--fg);
+        text-decoration: none;
+        font-weight: 600;
+      }
+      .btn.primary {
+        background: var(--accent);
+        color: var(--accent-fg);
+        border-color: var(--accent);
+      }
+      pre {
+        background: var(--code-bg);
+        color: var(--code-fg);
+        padding: 18px 20px;
+        border-radius: 10px;
+        overflow-x: auto;
+        font:
+          13.5px/1.55 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          Consolas,
+          monospace;
+        margin: 0;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+        font-size: 0.92em;
+      }
+      p code,
+      li code,
+      td code {
+        background: var(--card);
+        border: 1px solid var(--line);
+        padding: 1px 5px;
+        border-radius: 4px;
+      }
+      .miss {
+        color: var(--red);
+      }
+      .ok {
+        color: var(--green);
+      }
+      .dim {
+        color: #94a3b8;
+      }
+      section {
+        padding: 32px 0;
+        border-top: 1px solid var(--line);
+      }
+      h2 {
+        font-size: 26px;
+        margin: 0 0 8px;
+        letter-spacing: -0.01em;
+      }
+      .sub {
+        color: var(--muted);
+        margin: 0 0 20px;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+      }
+      .card {
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 10px;
+        padding: 18px 20px;
+      }
+      .card h3 {
+        margin: 0 0 6px;
+        font-size: 17px;
+      }
+      .card p {
+        margin: 0;
+        color: var(--muted);
+      }
+      .table {
+        overflow-x: auto;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 15px;
+      }
+      th,
+      td {
+        text-align: left;
+        padding: 8px 10px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+      }
+      th {
+        color: var(--muted);
+        font-weight: 600;
+        white-space: nowrap;
+      }
+      footer {
+        padding: 32px 0 48px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 14px;
+      }
+      footer a {
+        color: var(--fg);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <nav>
+        <p class="brand">mv3-remote-code-check</p>
+        <div>
+          <a href="#what" data-i18n="nav.what">What it finds</a>
+          <a href="#action" data-i18n="nav.action">GitHub Action</a>
+          <a href="https://github.com/vannt-dev/mv3-remote-code-check">GitHub</a>
+          <a href="https://www.npmjs.com/package/mv3-remote-code-check">npm</a>
+          <select id="lang" aria-label="Language">
+            <option value="en">English</option>
+            <option value="vi">Tiếng Việt</option>
+          </select>
+        </div>
+      </nav>
+
+      <header>
+        <h1 data-i18n="hero.h1">Find the remote code before the Chrome Web Store review does.</h1>
+        <p class="lead" data-i18n="hero.lead">
+          Manifest V3 forbids remotely hosted code, and the review reads your package without running it: a script address on another host
+          is a violation wherever it stands, even in a branch of a bundled library your extension never calls. mv3-remote-code-check reads
+          the built extension the same way and fails your build first.
+        </p>
+        <div class="cta">
+          <a class="btn primary" href="#start" data-i18n="cta.start">Get started</a>
+          <a class="btn" href="https://github.com/vannt-dev/mv3-remote-code-check#readme" data-i18n="cta.docs">Documentation</a>
+        </div>
+      </header>
+
+      <pre><span class="dim">$</span> npx mv3-remote-code-check dist
+dist: 2 reference(s) to remotely hosted code, which Manifest V3 forbids
+  <span class="miss">chunks/vendor-pdf.js:1:48213  https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js</span>  (address on a script CDN)
+  <span class="miss">vendor/tesseract/worker.min.js:2:92596  https://cdn.jsdelivr.net/npm/@tesseract.js-data/</span>  (address on a script CDN)
+
+<span class="dim">$</span> npx mv3-remote-code-check universal-file-converter-v1.2.2.zip
+<span class="ok">universal-file-converter-v1.2.2.zip: no remotely hosted code in 34 files</span></pre>
+
+      <section id="why">
+        <h2 data-i18n="why.h2">Why</h2>
+        <p class="sub" data-i18n="why.sub">
+          Universal File Converter 1.1.3 was rejected ("Blue Argon") for jsPDF's PDFObject address on cdnjs, in an output mode the extension
+          never used. tesseract.js carries the same kind of address in its default worker, core and language paths. A rejection costs days
+          of review; this check costs a second.
+        </p>
+        <div class="grid">
+          <div class="card">
+            <h3 data-i18n="why.1.h">Reads what you upload</h3>
+            <p data-i18n="why.1">
+              A built folder, the <code>.zip</code> you upload or a <code>.crx</code>: code, markup, styles and the manifest's content
+              security policy, with the file, line and column of each finding.
+            </p>
+          </div>
+          <div class="card">
+            <h3 data-i18n="why.2.h">Few false alarms</h3>
+            <p data-i18n="why.2">
+              Calls to an API, Google Fonts stylesheets and credit links to a source page on GitHub are not code and are not reported.
+              Checked against four extensions published on the Chrome Web Store: all clean.
+            </p>
+          </div>
+          <div class="card">
+            <h3 data-i18n="why.3.h">Fixes, not only reports</h3>
+            <p data-i18n="why.3">
+              The Vite / Rollup plugin takes script-CDN addresses out of every chunk while you build, then reads the whole output folder,
+              files copied by other plugins included, and fails the build on anything left.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section id="what">
+        <h2 data-i18n="what.h2">What it reports</h2>
+        <div class="table">
+          <table>
+            <tr>
+              <th><code>cdn-address</code></th>
+              <td data-i18n="what.cdn">
+                Any address on a script CDN (cdnjs, jsDelivr, unpkg, esm.sh, Skypack, jspm, …), whatever its ending.
+              </td>
+            </tr>
+            <tr>
+              <th><code>remote-script-file</code></th>
+              <td data-i18n="what.file">
+                A <code>.js</code>, <code>.mjs</code> or <code>.wasm</code> file on any other host, with or without a scheme or a query.
+              </td>
+            </tr>
+            <tr>
+              <th><code>script-tag</code></th>
+              <td data-i18n="what.tag">
+                A <code>&lt;script src&gt;</code> naming another host, or one whose address is built at run time.
+              </td>
+            </tr>
+            <tr>
+              <th><code>manifest-csp</code></th>
+              <td data-i18n="what.csp">
+                <code>content_security_policy.extension_pages</code> allowing a script source outside the package, or
+                <code>'unsafe-eval'</code>.
+              </td>
+            </tr>
+          </table>
+        </div>
+      </section>
+
+      <section id="action">
+        <h2 data-i18n="act.h2">In CI, before every release</h2>
+        <p class="sub" data-i18n="act.sub">
+          Point the action at the built folder or the Store ZIP. Findings appear as annotations and in the job summary; the action needs
+          only the runner's Node.js.
+        </p>
+        <pre>- run: npm run build
+- uses: vannt-dev/mv3-remote-code-check@v0
+  with:
+    path: dist                 <span class="dim"># or the .zip you upload; one path a line</span>
+    exclude: '**/*.map'        <span class="dim"># optional</span>
+    allow: |                   <span class="dim"># optional, findings to leave out</span>
+      https://example.com/known.js</pre>
+      </section>
+
+      <section id="vite">
+        <h2 data-i18n="vite.h2">In your Vite build</h2>
+        <pre>import { remoteCodeGuard } from 'mv3-remote-code-check/vite';
+
+export default defineConfig({
+  plugins: [
+    <span class="dim">// ...plugins that copy workers, wasm or vendored scripts</span>
+    remoteCodeGuard(), <span class="dim">// last, so its check sees what the others wrote</span>
+  ],
+});</pre>
+      </section>
+
+      <section id="start">
+        <h2 data-i18n="gs.h2">Get started</h2>
+        <p class="sub" data-i18n="gs.sub">Node.js 22.18 or newer. No runtime dependencies.</p>
+        <pre><span class="dim">$</span> npx mv3-remote-code-check dist
+<span class="dim">$</span> npx mv3-remote-code-check my-extension-1.2.0.zip --format json
+<span class="dim">$</span> npx mv3-remote-code-check dist --format github --summary "$GITHUB_STEP_SUMMARY"
+<span class="dim">$</span> npm install -D mv3-remote-code-check   <span class="dim"># for the Vite plugin and the API</span></pre>
+      </section>
+
+      <footer>
+        <span
+          >mv3-remote-code-check · <a href="https://github.com/vannt-dev/mv3-remote-code-check/blob/main/LICENSE">MIT</a> · Van Nguyen</span
+        >
+        · <a href="https://github.com/vannt-dev/browser-extension">Universal File Converter</a> ·
+        <a href="https://vannt-dev.github.io/">vannt-dev.github.io</a>
+      </footer>
+    </div>
+
+    <script>
+      var I18N = {
+        vi: {
+          'nav.what': 'Tìm được gì',
+          'nav.action': 'GitHub Action',
+          'hero.h1': 'Tìm remote code trước khi Chrome Web Store review tìm ra.',
+          'hero.lead':
+            'Manifest V3 cấm code tải từ nơi khác, và bên review đọc gói của bạn chứ không chạy nó: một địa chỉ script trên host khác là vi phạm dù nó nằm ở đâu, kể cả trong một nhánh của thư viện đóng gói kèm mà extension không bao giờ gọi. mv3-remote-code-check đọc extension đã build theo đúng cách đó và làm build của bạn fail trước.',
+          'cta.start': 'Bắt đầu',
+          'cta.docs': 'Tài liệu',
+          'why.h2': 'Vì sao',
+          'why.sub':
+            'Universal File Converter 1.1.3 bị từ chối ("Blue Argon") vì địa chỉ PDFObject của jsPDF trên cdnjs, nằm trong một chế độ xuất mà extension không dùng. tesseract.js cũng mang loại địa chỉ đó trong đường dẫn worker, core và ngôn ngữ mặc định. Một lần bị từ chối tốn nhiều ngày chờ review; lần kiểm tra này tốn một giây.',
+          'why.1.h': 'Đọc đúng file bạn upload',
+          'why.1':
+            'Thư mục đã build, file <code>.zip</code> bạn upload hoặc <code>.crx</code>: code, markup, style và content security policy trong manifest, kèm file, dòng và cột của từng chỗ tìm thấy.',
+          'why.2.h': 'Ít báo nhầm',
+          'why.2':
+            'Lời gọi API, stylesheet Google Fonts và link ghi nguồn tới trang mã nguồn trên GitHub không phải code nên không bị báo. Đã thử trên bốn extension đang có trên Chrome Web Store: đều sạch.',
+          'why.3.h': 'Sửa luôn, không chỉ báo',
+          'why.3':
+            'Plugin Vite / Rollup gỡ các địa chỉ CDN script khỏi mọi chunk khi build, rồi đọc cả thư mục output, kể cả file do plugin khác copy vào, và làm build fail nếu còn sót.',
+          'what.h2': 'Báo những gì',
+          'what.cdn': 'Mọi địa chỉ trên CDN script (cdnjs, jsDelivr, unpkg, esm.sh, Skypack, jspm, …), đuôi gì cũng tính.',
+          'what.file': 'File <code>.js</code>, <code>.mjs</code> hoặc <code>.wasm</code> trên host khác, có hoặc không có scheme, query.',
+          'what.tag': 'Thẻ <code>&lt;script src&gt;</code> trỏ tới host khác, hoặc địa chỉ được ghép lúc chạy.',
+          'what.csp':
+            "<code>content_security_policy.extension_pages</code> cho phép nguồn script ngoài gói, hoặc <code>'unsafe-eval'</code>.",
+          'act.h2': 'Trong CI, trước mỗi lần phát hành',
+          'act.sub':
+            'Trỏ action vào thư mục đã build hoặc file ZIP gửi Store. Kết quả hiện thành annotation và trong job summary; action chỉ cần Node.js có sẵn trên runner.',
+          'vite.h2': 'Trong bản build Vite',
+          'gs.h2': 'Bắt đầu',
+          'gs.sub': 'Node.js 22.18 trở lên. Không có dependency lúc chạy.',
+        },
+      };
+      var sel = document.getElementById('lang');
+      var EN = {};
+      document.querySelectorAll('[data-i18n]').forEach(function (el) {
+        EN[el.getAttribute('data-i18n')] = el.innerHTML;
+      });
+      function apply(lang) {
+        var dict = lang === 'en' ? EN : I18N[lang] || EN;
+        document.querySelectorAll('[data-i18n]').forEach(function (el) {
+          var k = el.getAttribute('data-i18n');
+          if (dict[k] !== undefined) el.innerHTML = dict[k];
+        });
+        document.documentElement.lang = lang;
+        sel.value = lang;
+        try {
+          localStorage.setItem('lang', lang);
+        } catch (e) {}
+      }
+      var saved = null;
+      try {
+        saved = localStorage.getItem('lang');
+      } catch (e) {}
+      var initial = saved || (navigator.language && navigator.language.toLowerCase().indexOf('vi') === 0 ? 'vi' : 'en');
+      if (initial !== 'en') apply(initial);
+      sel.addEventListener('change', function () {
+        apply(sel.value);
+      });
+    </script>
+  </body>
+</html>
