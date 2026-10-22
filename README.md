@@ -10,7 +10,8 @@ how [Universal File Converter](https://github.com/vannt-dev/browser-extension) 1
 carries the same kind of address in its default worker, core and language paths. This tool finds such
 addresses before you upload the package, so the review does not have to.
 
-It works as a CLI, a GitHub Action and a Vite / Rollup plugin. It has no dependencies.
+It works as a CLI, a GitHub Action and a Vite / Rollup plugin, written in TypeScript with types for
+the API and the plugin. It has no runtime dependencies.
 
 ## What it reports
 
@@ -64,7 +65,8 @@ an unreadable package.
 ```
 
 Findings are shown as annotations and in the job summary. The output `found` is `'true'` when
-something was found. The action runs `node` from its own checkout and installs nothing.
+something was found. The action builds the checker from its own checkout (about 15 seconds) and
+needs only the `node` of the runner.
 
 ## Vite / Rollup plugin
 

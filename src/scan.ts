@@ -1,39 +1,49 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { locateRemoteCode } from './patterns.js';
-import { checkManifest } from './manifest.js';
-import { zipEntries } from './zip.js';
+import { locateRemoteCode, type Rule } from './patterns.ts';
+import { checkManifest } from './manifest.ts';
+import { zipEntries, type PackageFile } from './zip.ts';
 
 /** Files the review reads as code or as markup that can load code. */
 export const SCANNED = /\.(?:m?js|cjs|html?|css|json|svg|xhtml)$/i;
 
-/**
- * @typedef {{ file: string, line?: number, column?: number, match: string, rule: string, detail?: string }} Finding
- * @typedef {{ allow?: string[], exclude?: string[] }} ScanOptions
- */
+/** One reference to remotely hosted code in a package. */
+export interface Finding {
+  /** '/'-separated path inside the package. */
+  file: string;
+  line?: number;
+  column?: number;
+  match: string;
+  rule: Rule;
+  detail?: string;
+}
 
-/**
- * Scans an unpacked extension folder or a packed .zip / .crx.
- * @param {string} target
- * @param {ScanOptions} [options]
- * @returns {{ files: number, findings: Finding[] }}
- */
-export function scanPath(target, options = {}) {
+export interface ScanOptions {
+  /** Leave out findings that contain one of these texts. */
+  allow?: readonly string[];
+  /** Leave out files matching one of these globs (`*` one segment, `**` any number). */
+  exclude?: readonly string[];
+}
+
+export interface ScanResult {
+  /** How many files were read. */
+  files: number;
+  findings: Finding[];
+}
+
+/** Scans an unpacked extension folder or a packed .zip / .crx. */
+export function scanPath(target: string, options: ScanOptions = {}): ScanResult {
   const stat = fs.statSync(target);
   if (stat.isDirectory()) return scanFiles(dirFiles(target), options);
   return scanFiles(archiveFiles(fs.readFileSync(target)), options);
 }
 
-/**
- * The same over files already in memory: { name, read() } with '/'-separated names.
- * @param {{ name: string, read: () => Buffer | string }[]} files
- * @param {ScanOptions} [options]
- */
-export function scanFiles(files, { allow = [], exclude = [] } = {}) {
+/** The same over files already in memory. */
+export function scanFiles(files: readonly PackageFile[], { allow = [], exclude = [] }: ScanOptions = {}): ScanResult {
   const excluded = exclude.map(globToRegExp);
-  const allowed = (match) => allow.some((text) => match.includes(text));
+  const allowed = (match: string) => allow.some((text) => match.includes(text));
   const manifestName = shallowestManifest(files.map((f) => f.name));
-  const findings = [];
+  const findings: Finding[] = [];
   let count = 0;
   for (const file of files) {
     if (!SCANNED.test(file.name) || excluded.some((re) => re.test(file.name))) continue;
@@ -54,20 +64,18 @@ export function scanFiles(files, { allow = [], exclude = [] } = {}) {
 /**
  * The files of a built folder that still name remotely hosted code, each with what was found.
  * Kept in the shape browser-extension's build used.
- * @param {string} dir
- * @param {ScanOptions} [options]
- * @returns {{ file: string, found: string[] }[]}
  */
-export function findRemoteCodeInDir(dir, options) {
-  const byFile = new Map();
+export function findRemoteCodeInDir(dir: string, options?: ScanOptions): { file: string; found: string[] }[] {
+  const byFile = new Map<string, string[]>();
   for (const { file, match } of scanPath(dir, options).findings) {
-    if (!byFile.has(file)) byFile.set(file, []);
-    byFile.get(file).push(match);
+    const found = byFile.get(file) ?? [];
+    found.push(match);
+    byFile.set(file, found);
   }
   return [...byFile].map(([file, found]) => ({ file, found }));
 }
 
-function dirFiles(dir) {
+function dirFiles(dir: string): PackageFile[] {
   return fs
     .readdirSync(dir, { recursive: true, withFileTypes: true })
     .filter((entry) => entry.isFile())
@@ -78,9 +86,8 @@ function dirFiles(dir) {
     .filter(({ name }) => !name.split('/').includes('node_modules'));
 }
 
-// A .crx is a ZIP behind a header; the ZIP reader finds its end record from the back either way,
-// but its offsets count from the start of the ZIP part.
-function archiveFiles(buffer) {
+// A .crx is a ZIP behind a header; the ZIP's offsets count from the start of the ZIP part.
+function archiveFiles(buffer: Buffer): PackageFile[] {
   if (buffer.toString('latin1', 0, 4) === 'Cr24') {
     const version = buffer.readUInt32LE(4);
     const start = version === 2 ? 16 + buffer.readUInt32LE(8) + buffer.readUInt32LE(12) : 12 + buffer.readUInt32LE(8);
@@ -89,14 +96,14 @@ function archiveFiles(buffer) {
   return zipEntries(buffer);
 }
 
-function shallowestManifest(names) {
+function shallowestManifest(names: string[]): string | undefined {
   return names
     .filter((name) => name === 'manifest.json' || name.endsWith('/manifest.json'))
     .sort((a, b) => a.split('/').length - b.split('/').length)[0];
 }
 
 /** '*' is one path segment, '**' any number; a pattern without '/' matches a file name anywhere. */
-export function globToRegExp(glob) {
+export function globToRegExp(glob: string): RegExp {
   const body = glob
     .replace(/[.+^${}()|[\]\\]/g, '\\$&')
     .replace(/\*\*\//g, '')

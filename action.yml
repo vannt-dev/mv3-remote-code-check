@@ -30,6 +30,10 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: Install mv3-remote-code-check
+      shell: bash
+      # a full install: the build needs TypeScript, a dev dependency
+      run: npm ci --no-audit --no-fund --prefix "$GITHUB_ACTION_PATH" && npm run build --prefix "$GITHUB_ACTION_PATH"
     - id: check
       shell: bash
       env:
@@ -37,7 +41,6 @@ runs:
         INPUT_ALLOW: ${{ inputs.allow }}
         INPUT_EXCLUDE: ${{ inputs.exclude }}
         INPUT_FAIL: ${{ inputs.fail }}
-      # No install: the checker has no dependencies and runs from the action's own checkout.
       run: |
         args=()
         while IFS= read -r line; do [ -n "$line" ] && args+=("$line"); done <<< "$INPUT_PATH"

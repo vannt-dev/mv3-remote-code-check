@@ -3,17 +3,17 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { main } from '../src/cli.js';
-import { remoteCodeGuard } from '../src/index.js';
+import { main } from '../src/cli.ts';
+import { remoteCodeGuard, type ScanResult } from '../src/index.ts';
 
-function run(args) {
+function run(args: string[]) {
   let out = '';
   let err = '';
   const code = main(args, { out: (s) => (out += s), err: (s) => (err += s) });
   return { code, out, err };
 }
 
-function folder(files) {
+function folder(files: Record<string, string>) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mv3rc-cli-'));
   for (const [name, text] of Object.entries(files)) fs.writeFileSync(path.join(dir, name), text);
   return dir;
@@ -31,8 +31,8 @@ test('exit 0 on a clean package, 1 on findings, 2 on bad usage', () => {
 
 test('json and github formats, and the Markdown summary', () => {
   const dir = folder({ 'a.js': 'x="https://unpkg.com/a"' });
-  const json = JSON.parse(run([dir, '--format', 'json']).out);
-  assert.equal(json.findings[0].rule, 'cdn-address');
+  const json = JSON.parse(run([dir, '--format', 'json']).out) as ScanResult;
+  assert.equal(json.findings[0]?.rule, 'cdn-address');
 
   const summary = path.join(dir, 'summary.md');
   const gh = run([dir, '--format', 'github', '--summary', summary]);

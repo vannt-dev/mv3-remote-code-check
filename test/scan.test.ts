@@ -4,10 +4,10 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { deflateRawSync } from 'node:zlib';
-import { checkManifest, findRemoteCodeInDir, scanPath, zipEntries } from '../src/index.js';
-import { globToRegExp } from '../src/scan.js';
+import { checkManifest, findRemoteCodeInDir, scanPath, zipEntries } from '../src/index.ts';
+import { globToRegExp } from '../src/scan.ts';
 
-function tempDir(files) {
+function tempDir(files: Record<string, string>) {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'mv3rc-'));
   for (const [name, text] of Object.entries(files)) {
     fs.mkdirSync(path.dirname(path.join(dir, name)), { recursive: true });
@@ -18,9 +18,9 @@ function tempDir(files) {
 
 // A ZIP with one deflated and one stored entry, written by hand so the reader is tested against
 // the format and not against itself.
-export function makeZip(files) {
-  const locals = [];
-  const centrals = [];
+export function makeZip(files: Record<string, string>): Buffer {
+  const locals: Buffer[] = [];
+  const centrals: Buffer[] = [];
   let offset = 0;
   Object.entries(files).forEach(([name, text], i) => {
     const raw = Buffer.from(text);
@@ -125,7 +125,8 @@ test('findRemoteCodeInDir keeps the shape browser-extension used', () => {
 });
 
 test('manifest CSP: outside script sources are reported, package and wasm sources are not', () => {
-  const csp = (policy) => checkManifest(JSON.stringify({ content_security_policy: { extension_pages: policy } })).map((f) => f.match);
+  const csp = (policy: string) =>
+    checkManifest(JSON.stringify({ content_security_policy: { extension_pages: policy } })).map((f) => f.match);
   assert.deepEqual(csp("script-src 'self' 'wasm-unsafe-eval'; object-src 'self'"), []);
   assert.deepEqual(csp("script-src 'self' https://cdn.example.com; object-src 'self'"), ['https://cdn.example.com']);
   assert.deepEqual(csp("default-src 'self' https:"), ['https:']);
