@@ -34,9 +34,27 @@ jobs:
       issues: write
     secrets:
       token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
-  # Added by hand (repokeeper leaves it alone): moves the major tag (v0, v1) that
-  # `uses: vannt-dev/mv3-remote-code-check@v0` in other repositories' workflows points at.
-  # npm publishing (trusted publishing, like openapi-drift) is added after the first manual publish.
+  # Added by hand (repokeeper leaves it alone): publishes the release to npm through trusted publishing
+  # (npmjs.com trusts this repository and this workflow; no token secret).
+  publish:
+    needs: release
+    if: ${{ needs.release.outputs.release_created == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm publish --provenance --access public
+  # Added by hand: moves the major tag (v0, v1) that `uses: vannt-dev/mv3-remote-code-check@v0`
+  # in other repositories' workflows points at.
   major-tag:
     needs: release
     if: ${{ needs.release.outputs.release_created == 'true' }}
