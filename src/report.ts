@@ -17,8 +17,10 @@ export function formatText(target: string, { files, findings }: ScanResult): str
   return `${target}: ${findings.length} reference(s) to remotely hosted code, which Manifest V3 forbids\n${lines.join('\n')}\n`;
 }
 
-export function formatJson(target: string, result: ScanResult): string {
-  return `${JSON.stringify({ target, ...result }, null, 2)}\n`;
+/** One path: one JSON object. Several: one array of them, so the output stays a single JSON value. */
+export function formatJson(scans: { target: string; result: ScanResult }[]): string {
+  const reports = scans.map(({ target, result }) => ({ target, ...result }));
+  return `${JSON.stringify(reports.length === 1 ? reports[0] : reports, null, 2)}\n`;
 }
 
 /**

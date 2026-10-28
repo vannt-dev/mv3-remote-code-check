@@ -40,6 +40,28 @@ test('json and github formats, and the Markdown summary', () => {
   assert.match(fs.readFileSync(summary, 'utf8'), /\| `a\.js:1:4` \| address on a script CDN \|/);
 });
 
+test('several paths: one JSON array, and nothing printed when one cannot be read', () => {
+  const clean = folder({ 'a.js': 'x=1' });
+  const remote = folder({ 'b.js': 'x="https://unpkg.com/b"' });
+  const both = run([clean, remote, '--format', 'json']);
+  assert.equal(both.code, 1);
+  const reports = JSON.parse(both.out) as (ScanResult & { target: string })[];
+  assert.deepEqual(
+    reports.map((report) => [report.target, report.findings.length]),
+    [
+      [clean, 0],
+      [remote, 1],
+    ]
+  );
+
+  const summary = path.join(clean, 'summary.md');
+  const missing = run([remote, 'does-not-exist', '--summary', summary]);
+  assert.equal(missing.code, 2);
+  assert.equal(missing.out, '');
+  assert.match(missing.err, /^does-not-exist: /);
+  assert.equal(fs.existsSync(summary), false);
+});
+
 test('--allow and --version', () => {
   const dir = folder({ 'a.js': 'x="https://unpkg.com/a"' });
   assert.equal(run([dir, '--allow', 'unpkg.com/a']).code, 0);
