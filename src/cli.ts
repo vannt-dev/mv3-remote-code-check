@@ -65,24 +65,29 @@ export function main(argv: string[], io: Io = {}): number {
     return 2;
   }
 
-  let failed = false;
-  const reports: string[] = [];
+  // Every path is read before anything is printed: a path that cannot be read stops the run
+  // with no report at all, rather than after the reports of the paths before it.
+  const scans: { target: string; result: ScanResult }[] = [];
+  let unreadable = false;
   for (const target of positionals) {
-    let result: ScanResult;
     try {
-      result = scanPath(target, { allow: values.allow, exclude: values.exclude });
+      scans.push({ target, result: scanPath(target, { allow: values.allow, exclude: values.exclude }) });
     } catch (e) {
       err(`${target}: ${(e as Error).message}\n`);
-      return 2;
+      unreadable = true;
     }
-    if (result.findings.length) failed = true;
-    if (values.format === 'json') out(formatJson(target, result));
-    else if (values.format === 'github') {
+  }
+  if (unreadable) return 2;
+
+  const failed = scans.some(({ result }) => result.findings.length > 0);
+  if (values.format === 'json') out(formatJson(scans));
+  for (const { target, result } of scans) {
+    if (values.format === 'github') {
       const isDir = fs.statSync(target).isDirectory();
       out(formatGithub(target, result, isDir ? path.relative(process.cwd(), target) : null));
-    } else out(formatText(target, result));
-    reports.push(formatMarkdown(target, result));
+    } else if (values.format === 'text') out(formatText(target, result));
   }
+  const reports = scans.map(({ target, result }) => formatMarkdown(target, result));
   if (values.summary) fs.appendFileSync(values.summary, `${reports.join('\n')}\n`);
   return failed ? 1 : 0;
 }

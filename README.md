@@ -48,6 +48,9 @@ dist: 1 reference(s) to remotely hosted code, which Manifest V3 forbids
 | `--exclude <glob>` | leave out files matching the glob, `*` one segment, `**` any (repeatable) |
 | `--summary <file>` | also append a Markdown report there, e.g. `$GITHUB_STEP_SUMMARY`          |
 
+With several paths, `--format json` prints one array with a report per path. Every path is read
+before anything is printed: if one cannot be read, the command exits 2 with the error and no report.
+
 The exit code is 0 when the package is clean, 1 when something was found, and 2 on a usage error or
 an unreadable package.
 
