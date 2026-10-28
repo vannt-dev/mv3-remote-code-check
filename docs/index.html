@@ -362,6 +362,7 @@ export default defineConfig({
         <pre><span class="dim">$</span> npx mv3-remote-code-check dist
 <span class="dim">$</span> npx mv3-remote-code-check my-extension-1.2.0.zip --format json
 <span class="dim">$</span> npx mv3-remote-code-check dist --format github --summary "$GITHUB_STEP_SUMMARY"
+<span class="dim">$</span> npx mv3-remote-code-check dist --format sarif > remote-code.sarif   <span class="dim"># for code scanning</span>
 <span class="dim">$</span> npm install -D mv3-remote-code-check   <span class="dim"># for the Vite plugin and the API</span></pre>
       </section>
 
