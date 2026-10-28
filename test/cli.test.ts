@@ -62,6 +62,44 @@ test('several paths: one JSON array, and nothing printed when one cannot be read
   assert.equal(fs.existsSync(summary), false);
 });
 
+test('sarif: one log for GitHub code scanning, every rule named, findings placed on the file', () => {
+  const dir = folder({ 'a.js': 'x="https://unpkg.com/a"' });
+  const clean = folder({ 'b.js': 'x=1' });
+  const res = run([dir, clean, '--format', 'sarif']);
+  assert.equal(res.code, 1);
+  const log = JSON.parse(res.out) as {
+    version: string;
+    runs: {
+      tool: { driver: { name: string; rules: { id: string }[] } };
+      results: {
+        ruleId: string;
+        level: string;
+        message: { text: string };
+        locations: { physicalLocation: { artifactLocation: { uri: string }; region?: object } }[];
+      }[];
+    }[];
+  };
+  assert.equal(log.version, '2.1.0');
+  assert.equal(log.runs.length, 1);
+  const [sarifRun] = log.runs;
+  assert.ok(sarifRun);
+  assert.equal(sarifRun.tool.driver.name, 'mv3-remote-code-check');
+  assert.deepEqual(
+    sarifRun.tool.driver.rules.map((rule) => rule.id),
+    ['cdn-address', 'remote-script-file', 'script-tag', 'script-tag-built', 'manifest-csp']
+  );
+  assert.equal(sarifRun.results.length, 1);
+  const [result] = sarifRun.results;
+  assert.equal(result?.ruleId, 'cdn-address');
+  assert.equal(result?.level, 'error');
+  assert.match(result?.message.text ?? '', /https:\/\/unpkg\.com\/a/);
+  const location = result?.locations[0]?.physicalLocation;
+  assert.equal(location?.artifactLocation.uri, `${path.relative(process.cwd(), dir).replaceAll('\\', '/')}/a.js`);
+  assert.deepEqual(location?.region, { startLine: 1, startColumn: 4 });
+
+  assert.equal(run([clean, '--format', 'sarif']).code, 0);
+});
+
 test('--allow and --version', () => {
   const dir = folder({ 'a.js': 'x="https://unpkg.com/a"' });
   assert.equal(run([dir, '--allow', 'unpkg.com/a']).code, 0);

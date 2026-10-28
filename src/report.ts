@@ -43,6 +43,58 @@ export function formatGithub(target: string, result: ScanResult, fileRoot: strin
   return `${out.join('\n')}\n`;
 }
 
+/**
+ * One SARIF 2.1.0 log for every path, for GitHub code scanning (github/codeql-action/upload-sarif).
+ * `root` is the path from the repository root; a folder's findings point at its files, an archive's
+ * at the archive itself, with the file inside it named in the message.
+ */
+export function formatSarif(scans: { target: string; result: ScanResult; root: string; isDir: boolean }[], version: string): string {
+  const rules = Object.entries(RULE_TEXT).map(([id, text]) => ({
+    id,
+    name: id,
+    shortDescription: { text: `Remote code: ${text}` },
+    fullDescription: { text: `Manifest V3 forbids remotely hosted code; the Chrome Web Store rejects a package with a ${text}.` },
+    defaultConfiguration: { level: 'error' },
+  }));
+  const results = scans.flatMap(({ target, result, root, isDir }) =>
+    result.findings.map((f) => {
+      const uri = isDir ? joinPath(root, f.file) : joinPath(root, '').replace(/\/$/, '');
+      const place = isDir ? '' : `${where(f)} in ${target}: `;
+      return {
+        ruleId: f.rule,
+        level: 'error',
+        message: { text: `${place}${shorten(f.match, 300)} (${RULE_TEXT[f.rule]})` },
+        locations: [
+          {
+            physicalLocation: {
+              artifactLocation: { uri },
+              ...(isDir && f.line ? { region: { startLine: f.line, startColumn: f.column } } : {}),
+            },
+          },
+        ],
+      };
+    })
+  );
+  const log = {
+    $schema: 'https://json.schemastore.org/sarif-2.1.0.json',
+    version: '2.1.0',
+    runs: [
+      {
+        tool: {
+          driver: {
+            name: 'mv3-remote-code-check',
+            version,
+            informationUri: 'https://github.com/vannt-dev/mv3-remote-code-check',
+            rules,
+          },
+        },
+        results,
+      },
+    ],
+  };
+  return `${JSON.stringify(log, null, 2)}\n`;
+}
+
 export function formatMarkdown(target: string, { files, findings }: ScanResult): string {
   if (!findings.length) return `### Remote code check\n\n\`${target}\`: no remotely hosted code in ${files} files.\n`;
   const rows = findings.map((f) => `| \`${where(f)}\` | ${RULE_TEXT[f.rule]} | \`${shorten(f.match, 120).replaceAll('|', '\\|')}\` |`);
