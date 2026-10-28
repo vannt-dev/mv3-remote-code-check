@@ -41,12 +41,12 @@ dist: 1 reference(s) to remotely hosted code, which Manifest V3 forbids
   chunks/vendor-pdf.js:1:48213  https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js  (address on a script CDN)
 ```
 
-| Option             | Meaning                                                                   |
-| ------------------ | ------------------------------------------------------------------------- |
-| `--format <f>`     | `text` (default), `json`, or `github` (workflow annotations)              |
-| `--allow <text>`   | leave out findings that contain this text (repeatable)                    |
-| `--exclude <glob>` | leave out files matching the glob, `*` one segment, `**` any (repeatable) |
-| `--summary <file>` | also append a Markdown report there, e.g. `$GITHUB_STEP_SUMMARY`          |
+| Option             | Meaning                                                                     |
+| ------------------ | --------------------------------------------------------------------------- |
+| `--format <f>`     | `text` (default), `json`, `github` (annotations) or `sarif` (code scanning) |
+| `--allow <text>`   | leave out findings that contain this text (repeatable)                      |
+| `--exclude <glob>` | leave out files matching the glob, `*` one segment, `**` any (repeatable)   |
+| `--summary <file>` | also append a Markdown report there, e.g. `$GITHUB_STEP_SUMMARY`            |
 
 With several paths, `--format json` prints one array with a report per path. Every path is read
 before anything is printed: if one cannot be read, the command exits 2 with the error and no report.
@@ -70,6 +70,18 @@ an unreadable package.
 Findings are shown as annotations and in the job summary. The output `found` is `'true'` when
 something was found. The action builds the checker from its own checkout (about 15 seconds) and
 needs only the `node` of the runner.
+
+To keep findings in the repository's **Security → Code scanning** tab instead, write SARIF and upload it:
+
+```yaml
+- run: npx mv3-remote-code-check dist --format sarif > remote-code.sarif || true
+- uses: github/codeql-action/upload-sarif@v4
+  with:
+    sarif_file: remote-code.sarif
+```
+
+A finding in a folder points at the file, line and column; one in a `.zip` or `.crx` points at the
+archive and names the file inside it.
 
 ## Vite / Rollup plugin
 

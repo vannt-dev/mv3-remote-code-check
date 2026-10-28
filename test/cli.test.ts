@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { main } from '../src/cli.ts';
+import { joinPath } from '../src/report.ts';
 import { remoteCodeGuard, type ScanResult } from '../src/index.ts';
 
 function run(args: string[]) {
@@ -40,6 +41,15 @@ test('json and github formats, and the Markdown summary', () => {
   assert.match(fs.readFileSync(summary, 'utf8'), /\| `a\.js:1:4` \| address on a script CDN \|/);
 });
 
+test('paths from the repository root keep a leading .. and drop only a leading ./', () => {
+  assert.equal(joinPath('../../tmp/x', 'a.js'), '../../tmp/x/a.js');
+  assert.equal(joinPath('..\\out', 'a.js'), '../out/a.js');
+  assert.equal(joinPath('./dist/', 'a.js'), 'dist/a.js');
+  assert.equal(joinPath('.', 'a.js'), 'a.js');
+  assert.equal(joinPath('', 'a.js'), 'a.js');
+  assert.equal(joinPath('.hidden', 'a.js'), '.hidden/a.js');
+});
+
 test('several paths: one JSON array, and nothing printed when one cannot be read', () => {
   const clean = folder({ 'a.js': 'x=1' });
   const remote = folder({ 'b.js': 'x="https://unpkg.com/b"' });
@@ -60,6 +70,44 @@ test('several paths: one JSON array, and nothing printed when one cannot be read
   assert.equal(missing.out, '');
   assert.match(missing.err, /^does-not-exist: /);
   assert.equal(fs.existsSync(summary), false);
+});
+
+test('sarif: one log for GitHub code scanning, every rule named, findings placed on the file', () => {
+  const dir = folder({ 'a.js': 'x="https://unpkg.com/a"' });
+  const clean = folder({ 'b.js': 'x=1' });
+  const res = run([dir, clean, '--format', 'sarif']);
+  assert.equal(res.code, 1);
+  const log = JSON.parse(res.out) as {
+    version: string;
+    runs: {
+      tool: { driver: { name: string; rules: { id: string }[] } };
+      results: {
+        ruleId: string;
+        level: string;
+        message: { text: string };
+        locations: { physicalLocation: { artifactLocation: { uri: string }; region?: object } }[];
+      }[];
+    }[];
+  };
+  assert.equal(log.version, '2.1.0');
+  assert.equal(log.runs.length, 1);
+  const [sarifRun] = log.runs;
+  assert.ok(sarifRun);
+  assert.equal(sarifRun.tool.driver.name, 'mv3-remote-code-check');
+  assert.deepEqual(
+    sarifRun.tool.driver.rules.map((rule) => rule.id),
+    ['cdn-address', 'remote-script-file', 'script-tag', 'script-tag-built', 'manifest-csp']
+  );
+  assert.equal(sarifRun.results.length, 1);
+  const [result] = sarifRun.results;
+  assert.equal(result?.ruleId, 'cdn-address');
+  assert.equal(result?.level, 'error');
+  assert.match(result?.message.text ?? '', /https:\/\/unpkg\.com\/a/);
+  const location = result?.locations[0]?.physicalLocation;
+  assert.equal(location?.artifactLocation.uri, `${path.relative(process.cwd(), dir).replaceAll('\\', '/')}/a.js`);
+  assert.deepEqual(location?.region, { startLine: 1, startColumn: 4 });
+
+  assert.equal(run([clean, '--format', 'sarif']).code, 0);
 });
 
 test('--allow and --version', () => {

@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { scanPath, type ScanResult } from './scan.ts';
-import { formatGithub, formatJson, formatMarkdown, formatText } from './report.ts';
+import { formatGithub, formatJson, formatMarkdown, formatSarif, formatText } from './report.ts';
 
 const USAGE = `usage: mv3-remote-code-check <folder|.zip|.crx>... [options]
 
@@ -11,7 +11,7 @@ reference to remotely hosted code (script addresses on other hosts, script tags 
 a content security policy that allows them). Exits 1 when it finds any.
 
 options:
-  --format <f>     text (default), json or github (workflow annotations)
+  --format <f>     text (default), json, github (workflow annotations) or sarif (code scanning)
   --allow <text>   leave out findings that contain this text (repeatable)
   --exclude <glob> leave out files matching this glob, * one segment, ** any (repeatable)
   --summary <file> also write a Markdown report there (e.g. $GITHUB_STEP_SUMMARY)
@@ -51,13 +51,13 @@ export function main(argv: string[], io: Io = {}): number {
     out(USAGE);
     return 0;
   }
+  const version = () => (JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string }).version;
   if (values.version) {
-    const pkg = JSON.parse(fs.readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string };
-    out(`${pkg.version}\n`);
+    out(`${version()}\n`);
     return 0;
   }
-  if (!['text', 'json', 'github'].includes(values.format)) {
-    err(`unknown --format ${values.format}: use text, json or github\n`);
+  if (!['text', 'json', 'github', 'sarif'].includes(values.format)) {
+    err(`unknown --format ${values.format}: use text, json, github or sarif\n`);
     return 2;
   }
   if (!positionals.length) {
@@ -81,6 +81,14 @@ export function main(argv: string[], io: Io = {}): number {
 
   const failed = scans.some(({ result }) => result.findings.length > 0);
   if (values.format === 'json') out(formatJson(scans));
+  if (values.format === 'sarif') {
+    const placed = scans.map((scan) => ({
+      ...scan,
+      root: path.relative(process.cwd(), scan.target),
+      isDir: fs.statSync(scan.target).isDirectory(),
+    }));
+    out(formatSarif(placed, version()));
+  }
   for (const { target, result } of scans) {
     if (values.format === 'github') {
       const isDir = fs.statSync(target).isDirectory();
