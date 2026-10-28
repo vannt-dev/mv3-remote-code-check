@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { main } from '../src/cli.ts';
+import { joinPath } from '../src/report.ts';
 import { remoteCodeGuard, type ScanResult } from '../src/index.ts';
 
 function run(args: string[]) {
@@ -38,6 +39,15 @@ test('json and github formats, and the Markdown summary', () => {
   const gh = run([dir, '--format', 'github', '--summary', summary]);
   assert.match(gh.out, /^::error file=[^,]*a\.js,line=1,col=4,title=Remote code%3A address on a script CDN::https/m);
   assert.match(fs.readFileSync(summary, 'utf8'), /\| `a\.js:1:4` \| address on a script CDN \|/);
+});
+
+test('paths from the repository root keep a leading .. and drop only a leading ./', () => {
+  assert.equal(joinPath('../../tmp/x', 'a.js'), '../../tmp/x/a.js');
+  assert.equal(joinPath('..\\out', 'a.js'), '../out/a.js');
+  assert.equal(joinPath('./dist/', 'a.js'), 'dist/a.js');
+  assert.equal(joinPath('.', 'a.js'), 'a.js');
+  assert.equal(joinPath('', 'a.js'), 'a.js');
+  assert.equal(joinPath('.hidden', 'a.js'), '.hidden/a.js');
 });
 
 test('several paths: one JSON array, and nothing printed when one cannot be read', () => {

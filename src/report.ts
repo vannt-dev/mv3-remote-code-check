@@ -104,10 +104,11 @@ export function formatMarkdown(target: string, { files, findings }: ScanResult):
   );
 }
 
-function joinPath(root: string, file: string): string {
+export function joinPath(root: string, file: string): string {
   const clean = root
     .replace(/\\/g, '/')
-    .replace(/^\.\/?/, '')
+    // A leading ./ or a lone . only: a leading .. is part of the path.
+    .replace(/^\.(\/|$)/, '')
     .replace(/\/$/, '');
   return clean ? `${clean}/${file}` : file;
 }
