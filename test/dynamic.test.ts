@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { locateDynamicCode, maskStringsAndComments } from '../src/index.ts';
+import { locateDynamicCode } from '../src/index.ts';
+import { maskStringsAndComments } from '../src/dynamic.ts';
 
 const found = (code: string) => locateDynamicCode(code).map(({ match }) => match);
 
