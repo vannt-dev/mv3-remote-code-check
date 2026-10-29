@@ -96,7 +96,7 @@ test('sarif: one log for GitHub code scanning, every rule named, findings placed
   assert.equal(sarifRun.tool.driver.name, 'mv3-remote-code-check');
   assert.deepEqual(
     sarifRun.tool.driver.rules.map((rule) => rule.id),
-    ['cdn-address', 'remote-script-file', 'script-tag', 'script-tag-built', 'manifest-csp']
+    ['cdn-address', 'remote-script-file', 'script-tag', 'script-tag-built', 'manifest-csp', 'dynamic-code']
   );
   assert.equal(sarifRun.results.length, 1);
   const [result] = sarifRun.results;
@@ -125,4 +125,49 @@ test('the Vite plugin strips chunks and fails the build on what is left in the o
   assert.throws(() => plugin.writeBundle.handler({ dir }), /copied\.js: https:\/\/example\.com\/w\.js/);
   assert.doesNotThrow(() => remoteCodeGuard({ allow: ['example.com'] }).writeBundle.handler({ dir }));
   assert.doesNotThrow(() => remoteCodeGuard({ check: false }).writeBundle.handler({ dir }));
+});
+
+test('dynamic code: a warning that keeps exit 0, and exit 1 with --fail-on-dynamic-code', () => {
+  const dir = folder({ 'bg.js': 'eval(code)' });
+  const text = run([dir]);
+  assert.equal(text.code, 0);
+  assert.match(text.out, /no remotely hosted code in 1 files/);
+  assert.match(text.out, /1 warning\(s\): dynamic code/);
+  assert.match(text.out, /bg\.js:1:1 {2}eval\(code\) {2}\(dynamic code evaluation/);
+  assert.equal(run([dir, '--fail-on-dynamic-code']).code, 1);
+  assert.equal(run([folder({ 'a.js': 'x=1' }), '--fail-on-dynamic-code']).code, 0);
+
+  const json = JSON.parse(run([dir, '--format', 'json']).out) as ScanResult;
+  assert.deepEqual(json.findings, []);
+  assert.equal(json.warnings[0]?.rule, 'dynamic-code');
+
+  const summary = path.join(dir, 'summary.md');
+  const gh = run([dir, '--format', 'github', '--summary', summary]);
+  assert.equal(gh.code, 0);
+  assert.match(gh.out, /^::warning file=[^,]*bg\.js,line=1,col=1,title=Dynamic code%3A [^:]*::eval\(code\)$/m);
+  assert.match(fs.readFileSync(summary, 'utf8'), /\| `bg\.js:1:1` \| dynamic code evaluation/);
+  assert.match(run([dir, '--format', 'github', '--fail-on-dynamic-code']).out, /^::error file=[^,]*bg\.js/m);
+
+  type Sarif = {
+    runs: {
+      tool: { driver: { rules: { id: string; defaultConfiguration: { level: string } }[] } };
+      results: { ruleId: string; level: string }[];
+    }[];
+  };
+  const sarif = run([dir, '--format', 'sarif']);
+  assert.equal(sarif.code, 0);
+  const log = JSON.parse(sarif.out) as Sarif;
+  const rule = log.runs[0]?.tool.driver.rules.find((r) => r.id === 'dynamic-code');
+  assert.equal(rule?.defaultConfiguration.level, 'warning');
+  assert.deepEqual(
+    log.runs[0]?.results.map((r) => [r.ruleId, r.level]),
+    [['dynamic-code', 'warning']]
+  );
+  const strict = JSON.parse(run([dir, '--format', 'sarif', '--fail-on-dynamic-code']).out) as Sarif;
+  assert.equal(strict.runs[0]?.results[0]?.level, 'error');
+});
+
+test('the Vite plugin does not fail the build on dynamic code', () => {
+  const dir = folder({ 'bg.js': 'eval(code)' });
+  assert.doesNotThrow(() => remoteCodeGuard().writeBundle.handler({ dir }));
 });

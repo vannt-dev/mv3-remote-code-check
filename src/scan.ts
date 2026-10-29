@@ -2,12 +2,16 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { locateRemoteCode, type Rule } from './patterns.ts';
 import { checkManifest } from './manifest.ts';
+import { locateDynamicCode } from './dynamic.ts';
 import { zipEntries, type PackageFile } from './zip.ts';
 
 /** Files the review reads as code or as markup that can load code. */
 export const SCANNED = /\.(?:m?js|cjs|html?|css|json|svg|xhtml)$/i;
 
-/** One reference to remotely hosted code in a package. */
+/** Files also read for dynamic code (eval and the like). */
+export const SCRIPTS = /\.(?:m?js|cjs)$/i;
+
+/** One reference to remotely hosted code in a package, or one warning. */
 export interface Finding {
   /** '/'-separated path inside the package. */
   file: string;
@@ -28,7 +32,10 @@ export interface ScanOptions {
 export interface ScanResult {
   /** How many files were read. */
   files: number;
+  /** Remotely hosted code: what the Chrome Web Store rejects. */
   findings: Finding[];
+  /** Dynamic code (rule `dynamic-code`): blocked by the MV3 content security policy at run time. */
+  warnings: Finding[];
 }
 
 /** Scans an unpacked extension folder or a packed .zip / .crx. */
@@ -44,6 +51,7 @@ export function scanFiles(files: readonly PackageFile[], { allow = [], exclude =
   const allowed = (match: string) => allow.some((text) => match.includes(text));
   const manifestName = shallowestManifest(files.map((f) => f.name));
   const findings: Finding[] = [];
+  const warnings: Finding[] = [];
   let count = 0;
   for (const file of files) {
     if (!SCANNED.test(file.name) || excluded.some((re) => re.test(file.name))) continue;
@@ -52,13 +60,18 @@ export function scanFiles(files: readonly PackageFile[], { allow = [], exclude =
     for (const { match, rule, line, column } of locateRemoteCode(text)) {
       if (!allowed(match)) findings.push({ file: file.name, line, column, match, rule });
     }
+    if (SCRIPTS.test(file.name)) {
+      for (const { match, rule, line, column } of locateDynamicCode(text)) {
+        if (!allowed(match)) warnings.push({ file: file.name, line, column, match, rule });
+      }
+    }
     if (file.name === manifestName) {
       for (const finding of checkManifest(text)) {
         if (!allowed(finding.match)) findings.push({ file: file.name, ...finding });
       }
     }
   }
-  return { files: count, findings };
+  return { files: count, findings, warnings };
 }
 
 /**

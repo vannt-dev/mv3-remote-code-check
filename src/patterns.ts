@@ -9,7 +9,7 @@
  */
 
 /** The kind of a finding. */
-export type Rule = 'cdn-address' | 'remote-script-file' | 'script-tag' | 'script-tag-built' | 'manifest-csp';
+export type Rule = 'cdn-address' | 'remote-script-file' | 'script-tag' | 'script-tag-built' | 'manifest-csp' | 'dynamic-code';
 
 /** One address of remotely hosted code in a piece of source text. */
 export interface Located {
@@ -93,13 +93,13 @@ export function locateRemoteCode(code: string): Located[] {
   return found;
 }
 
-function lineStartsOf(code: string): number[] {
+export function lineStartsOf(code: string): number[] {
   const starts = [0];
   for (let i = code.indexOf('\n'); i !== -1; i = code.indexOf('\n', i + 1)) starts.push(i + 1);
   return starts;
 }
 
-function position(starts: number[], index: number): { line: number; column: number } {
+export function position(starts: number[], index: number): { line: number; column: number } {
   let low = 0;
   let high = starts.length - 1;
   while (low < high) {

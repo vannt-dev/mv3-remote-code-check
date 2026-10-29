@@ -148,3 +148,24 @@ test('globs', () => {
   assert.ok(globToRegExp('**/x.js').test('x.js'));
   assert.ok(!globToRegExp('vendor/*.js').test('vendor/a/b.js'));
 });
+
+test('dynamic code in script files is a warning, kept apart from the findings', () => {
+  const dir = tempDir({
+    'manifest.json': MANIFEST,
+    'bg.js': 'eval(code)',
+    'lib/a.mjs': 'x="https://unpkg.com/a"; new Function(src)',
+    'vendor/v.js': 'eval(v)',
+    'page.html': '<p>eval(x) in prose</p>',
+  });
+  const { findings, warnings } = scanPath(dir, { exclude: ['vendor/**'] });
+  assert.deepEqual(
+    findings.map((f) => [f.file, f.rule]),
+    [['lib/a.mjs', 'cdn-address']]
+  );
+  assert.deepEqual(warnings.map((f) => [f.file, f.rule, f.match, f.line, f.column]).sort(), [
+    ['bg.js', 'dynamic-code', 'eval(code)', 1, 1],
+    ['lib/a.mjs', 'dynamic-code', 'new Function(src)', 1, 26],
+  ]);
+  assert.deepEqual(scanPath(dir, { allow: ['eval(code)'], exclude: ['vendor/**'] }).warnings.length, 1);
+  assert.deepEqual(findRemoteCodeInDir(tempDir({ 'a.js': 'eval(x)' })), []);
+});
