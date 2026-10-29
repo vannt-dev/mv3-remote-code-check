@@ -101,6 +101,26 @@ test('the lookup walks up to the repository root and reads the package.json key'
   assert.equal(findConfig(path.join(plain, 'sub')), null);
 });
 
+test('a broken package.json found by the lookup is skipped with a warning, not an error', () => {
+  const dir = project({ 'package.json': '{ broken', 'ext/a.js': remote, 'app/package.json': '[]' });
+  const res = run(['ext'], path.join(dir));
+  assert.equal(res.code, 1);
+  assert.match(res.out, /ext: 1 reference/);
+  assert.match(res.err, /package\.json: skipped, invalid JSON/);
+
+  // the lookup goes on past it: a config file above is still found
+  fs.writeFileSync(path.join(dir, CONFIG_FILE), config({ allow: ['unpkg.com'] }));
+  const sub = run([path.join(dir, 'ext')], path.join(dir, 'app'));
+  assert.equal(sub.code, 0);
+  assert.match(sub.err, /app[\\/]package\.json: skipped, not a JSON object/);
+
+  // a package.json key with wrong types is a config the user wrote: still an error
+  const typed = project({ 'package.json': config({ mv3RemoteCodeCheck: { exclude: 'x' } }), 'a.js': '' });
+  assert.equal(run(['.'], typed).code, 2);
+  // so is a broken package.json named with --config
+  assert.equal(run(['--config', path.join(dir, 'package.json'), 'ext'], dir).code, 2);
+});
+
 test('a bad config is a usage error (exit 2); an unknown key is a warning', () => {
   const bad = (text: string) => run(['--config', path.join(project({ 'c.json': text }), 'c.json'), '.'], os.tmpdir());
   const broken = bad('{ paths: [ }');

@@ -83,15 +83,24 @@ export function loadConfig(file: string): LoadedConfig {
  * Looks for the config from `dir` upwards: in each folder `mv3-remote-code-check.config.json`
  * first, then a package.json with a `mv3RemoteCodeCheck` key. The search stops at the first one
  * found, or after the folder that holds `.git` (the repository root), or at the filesystem root.
+ * A package.json that cannot be read as an object is not a config: it is passed to `warn` and
+ * the search goes on. A config file, or a `mv3RemoteCodeCheck` key, that is invalid throws.
  */
-export function findConfig(dir: string): LoadedConfig | null {
+export function findConfig(dir: string, warn: (message: string) => void = () => {}): LoadedConfig | null {
   let current = path.resolve(dir);
   for (;;) {
     const file = path.join(current, CONFIG_FILE);
     if (fs.existsSync(file)) return loadConfig(file);
     const pkg = path.join(current, 'package.json');
     if (fs.existsSync(pkg)) {
-      const json = readJson(pkg);
+      let json: unknown;
+      try {
+        json = readJson(pkg);
+      } catch (e) {
+        if (!(e instanceof ConfigError)) throw e;
+        warn(e.message.replace(`${pkg}: `, `${pkg}: skipped, `));
+      }
+      if (json !== undefined && !isObject(json)) warn(`${pkg}: skipped, not a JSON object`);
       if (isObject(json) && json[PACKAGE_KEY] !== undefined) return validate(pkg, json[PACKAGE_KEY]);
     }
     const parent = path.dirname(current);

@@ -110,7 +110,9 @@ can instead sit under a `"mv3RemoteCodeCheck"` key in `package.json`.
   `--exclude` **add to** the config's lists rather than replace them, so the exceptions the project
   keeps in the file always apply; use `--no-config` to drop them.
 - **Errors:** a key the tool does not know is a warning on stderr and is ignored. A file that is not
-  valid JSON, is not an object, or has a value of the wrong type stops the run with exit code 2.
+  valid JSON, is not an object, or has a value of the wrong type stops the run with exit code 2. A
+  `package.json` met during the search that is not valid JSON is skipped with a warning, so it never
+  stops a run that did not ask for a config; one with a wrong `"mv3RemoteCodeCheck"` key does.
 
 ## GitHub Action
 

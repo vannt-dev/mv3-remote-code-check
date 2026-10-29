@@ -98,7 +98,8 @@ export function main(argv: string[], io: Io = {}): number {
   let configDir = cwd;
   if (!values['no-config']) {
     try {
-      const loaded = values.config !== undefined ? loadConfig(path.resolve(cwd, values.config)) : findConfig(cwd);
+      const loaded =
+        values.config !== undefined ? loadConfig(path.resolve(cwd, values.config)) : findConfig(cwd, (message) => err(`${message}\n`));
       if (loaded) {
         config = loaded.config;
         configDir = path.dirname(loaded.file);
