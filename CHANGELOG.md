@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.4.0](https://github.com/vannt-dev/mv3-remote-code-check/compare/v0.3.0...v0.4.0) (2026-10-29)
+
+
+### Features
+
+* warn about dynamic code (eval, new Function, string timers) ([#12](https://github.com/vannt-dev/mv3-remote-code-check/issues/12)) ([ae87f42](https://github.com/vannt-dev/mv3-remote-code-check/commit/ae87f42bdca19b4e48fe2b79c3f13b99f14241f1))
+
 ## [0.3.0](https://github.com/vannt-dev/mv3-remote-code-check/compare/v0.2.0...v0.3.0) (2026-10-28)
 
 
