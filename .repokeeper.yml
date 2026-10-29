@@ -19,5 +19,6 @@ modules:
     contact: https://github.com/vannt-dev
     codeowners:
       - "@vannt-dev"
-owned: []
+owned:
+  - .github/dependabot.yml
 stack_options: {}
