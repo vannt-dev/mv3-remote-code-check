@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.0](https://github.com/vannt-dev/mv3-remote-code-check/compare/v0.4.0...v0.5.0) (2026-10-29)
+
+
+### Features
+
+* read settings from a config file ([#15](https://github.com/vannt-dev/mv3-remote-code-check/issues/15)) ([baff6f3](https://github.com/vannt-dev/mv3-remote-code-check/commit/baff6f33f67f617badce94cc78edc7f41941e442))
+
 ## [0.4.0](https://github.com/vannt-dev/mv3-remote-code-check/compare/v0.3.0...v0.4.0) (2026-10-29)
 
 
