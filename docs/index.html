@@ -325,6 +325,13 @@ dist: 2 reference(s) to remotely hosted code, which Manifest V3 forbids
                 <code>'unsafe-eval'</code>.
               </td>
             </tr>
+            <tr>
+              <th><code>dynamic-code</code></th>
+              <td data-i18n="what.dyn">
+                <code>eval(…)</code>, <code>new Function(…)</code> and string timers in script files. A warning by default;
+                <code>--fail-on-dynamic-code</code> makes it fail the run.
+              </td>
+            </tr>
           </table>
         </div>
       </section>
@@ -403,6 +410,8 @@ export default defineConfig({
           'what.tag': 'Thẻ <code>&lt;script src&gt;</code> trỏ tới host khác, hoặc địa chỉ được ghép lúc chạy.',
           'what.csp':
             "<code>content_security_policy.extension_pages</code> cho phép nguồn script ngoài gói, hoặc <code>'unsafe-eval'</code>.",
+          'what.dyn':
+            '<code>eval(…)</code>, <code>new Function(…)</code> và timer nhận chuỗi trong file script. Mặc định chỉ cảnh báo; <code>--fail-on-dynamic-code</code> biến nó thành lỗi.',
           'act.h2': 'Trong CI, trước mỗi lần phát hành',
           'act.sub':
             'Trỏ action vào thư mục đã build hoặc file ZIP gửi Store. Kết quả hiện thành annotation và trong job summary; action chỉ cần Node.js có sẵn trên runner.',
