@@ -7,6 +7,7 @@ export {
   type Rule,
   type StripOptions,
 } from './patterns.ts';
+export { locateDynamicCode, maskStringsAndComments } from './dynamic.ts';
 export { checkManifest, type ManifestFinding } from './manifest.ts';
 export { scanPath, scanFiles, findRemoteCodeInDir, type Finding, type ScanOptions, type ScanResult } from './scan.ts';
 export { zipEntries, type PackageFile } from './zip.ts';

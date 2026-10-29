@@ -21,10 +21,14 @@ inputs:
     description: Set to 'false' to report findings without failing the job.
     required: false
     default: 'true'
+  fail-on-dynamic-code:
+    description: Set to 'true' to fail on dynamic code (eval, new Function) too; by default it is only a warning.
+    required: false
+    default: 'false'
 
 outputs:
   found:
-    description: "'true' when remotely hosted code was found."
+    description: "'true' when remotely hosted code was found (or dynamic code, with fail-on-dynamic-code)."
     value: ${{ steps.check.outputs.found }}
 
 runs:
@@ -41,11 +45,13 @@ runs:
         INPUT_ALLOW: ${{ inputs.allow }}
         INPUT_EXCLUDE: ${{ inputs.exclude }}
         INPUT_FAIL: ${{ inputs.fail }}
+        INPUT_FAIL_ON_DYNAMIC_CODE: ${{ inputs.fail-on-dynamic-code }}
       run: |
         args=()
         while IFS= read -r line; do [ -n "$line" ] && args+=("$line"); done <<< "$INPUT_PATH"
         while IFS= read -r line; do [ -n "$line" ] && args+=(--allow "$line"); done <<< "$INPUT_ALLOW"
         while IFS= read -r line; do [ -n "$line" ] && args+=(--exclude "$line"); done <<< "$INPUT_EXCLUDE"
+        if [ "$INPUT_FAIL_ON_DYNAMIC_CODE" = true ]; then args+=(--fail-on-dynamic-code); fi
         set +e
         node "$GITHUB_ACTION_PATH/bin/mv3-remote-code-check.js" "${args[@]}" --format github --summary "$GITHUB_STEP_SUMMARY"
         code=$?

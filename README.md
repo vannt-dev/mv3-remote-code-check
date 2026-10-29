@@ -29,6 +29,25 @@ It reads `.js`, `.mjs`, `.cjs`, `.html`, `.css`, `.json`, `.svg` and `.xhtml` fi
 HTML, not a script. Calls to an API (`fetch('https://api…')`) and stylesheets such as Google Fonts are
 not code and are not reported.
 
+### Warning: dynamic code
+
+| Rule           | Example                                                                   |
+| -------------- | ------------------------------------------------------------------------- |
+| `dynamic-code` | `eval(code)`, `new Function("a", "return a")`, `setTimeout("tick()", 10)` |
+
+The content security policy of Manifest V3 extension pages has no `'unsafe-eval'`, so such code
+throws when it runs. It is not remotely hosted code, so it is a **warning**: it is listed in every
+format but does not change the exit code. Pass `--fail-on-dynamic-code` (or the action's
+`fail-on-dynamic-code: 'true'`) to fail on it too. The Vite plugin does not fail the build on it.
+
+It reads `.js`, `.mjs` and `.cjs` files, with the contents of strings, comments and regular
+expressions left out, so `"eval() is off"` or `// no eval(x)` are not reported. It covers
+`eval(…)` bare or on `window`, `self` or `globalThis` (not `vm.eval(…)` or a method named `eval`),
+`new Function(…)`, and `setTimeout` / `setInterval` given a string literal or template. It does not
+see `Function("…")` without `new`, indirect eval such as `(0, eval)(x)`, or a timer given a variable
+that holds a string. `--allow` and `--exclude` apply to warnings as well; a script that runs only in
+a sandboxed page (`sandbox.pages` in the manifest), where eval is allowed, is one to `--exclude`.
+
 ## CLI
 
 ```sh
@@ -41,18 +60,21 @@ dist: 1 reference(s) to remotely hosted code, which Manifest V3 forbids
   chunks/vendor-pdf.js:1:48213  https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js  (address on a script CDN)
 ```
 
-| Option             | Meaning                                                                     |
-| ------------------ | --------------------------------------------------------------------------- |
-| `--format <f>`     | `text` (default), `json`, `github` (annotations) or `sarif` (code scanning) |
-| `--allow <text>`   | leave out findings that contain this text (repeatable)                      |
-| `--exclude <glob>` | leave out files matching the glob, `*` one segment, `**` any (repeatable)   |
-| `--summary <file>` | also append a Markdown report there, e.g. `$GITHUB_STEP_SUMMARY`            |
+| Option                   | Meaning                                                                     |
+| ------------------------ | --------------------------------------------------------------------------- |
+| `--format <f>`           | `text` (default), `json`, `github` (annotations) or `sarif` (code scanning) |
+| `--allow <text>`         | leave out findings that contain this text (repeatable)                      |
+| `--exclude <glob>`       | leave out files matching the glob, `*` one segment, `**` any (repeatable)   |
+| `--summary <file>`       | also append a Markdown report there, e.g. `$GITHUB_STEP_SUMMARY`            |
+| `--fail-on-dynamic-code` | exit 1 on `dynamic-code` warnings too, and report them as errors            |
 
 With several paths, `--format json` prints one array with a report per path. Every path is read
 before anything is printed: if one cannot be read, the command exits 2 with the error and no report.
 
-The exit code is 0 when the package is clean, 1 when something was found, and 2 on a usage error or
-an unreadable package.
+The exit code is 0 when the package is clean, 1 when remotely hosted code was found, and 2 on a usage
+error or an unreadable package. `dynamic-code` warnings leave it at 0 unless `--fail-on-dynamic-code`
+is given. In `--format json` they are in a `warnings` array next to `findings`; in `github` and
+`sarif` they have the level `warning` (`error` with the flag).
 
 ## GitHub Action
 
@@ -65,10 +87,11 @@ an unreadable package.
     #   https://example.com/known.js
     # exclude: '**/*.map'
     # fail: 'false'   # report only
+    # fail-on-dynamic-code: 'true'   # also fail on eval / new Function
 ```
 
 Findings are shown as annotations and in the job summary. The output `found` is `'true'` when
-something was found. The action builds the checker from its own checkout (about 15 seconds) and
+remotely hosted code was found (or dynamic code, with `fail-on-dynamic-code`). The action builds the checker from its own checkout (about 15 seconds) and
 needs only the `node` of the runner.
 
 To keep findings in the repository's **Security → Code scanning** tab instead, write SARIF and upload it:
@@ -109,8 +132,9 @@ export default defineConfig({
 ```js
 import { scanPath, findRemoteCode, stripRemoteCode, checkManifest } from 'mv3-remote-code-check';
 
-const { files, findings } = scanPath('dist'); // or a .zip / .crx
+const { files, findings, warnings } = scanPath('dist'); // or a .zip / .crx
 // findings: [{ file, line, column, match, rule }]
+// warnings: the same shape, rule 'dynamic-code'
 ```
 
 ## Limits
