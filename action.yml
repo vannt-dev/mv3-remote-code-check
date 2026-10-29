@@ -7,14 +7,15 @@ branding:
 
 inputs:
   path:
-    description: The built extension to check, one path a line (a folder, a .zip or a .crx).
-    required: true
+    description: The built extension to check, one path a line (a folder, a .zip or a .crx). Leave it out to use the paths of the config file.
+    required: false
+    default: ''
   allow:
-    description: Findings to leave out, one text a line; a finding that contains the text is not reported.
+    description: Findings to leave out, one text a line; a finding that contains the text is not reported. Added to the config file's allow list.
     required: false
     default: ''
   exclude:
-    description: Files to leave out, one glob a line (* is one path segment, ** any number).
+    description: Files to leave out, one glob a line (* is one path segment, ** any number). Added to the config file's exclude list.
     required: false
     default: ''
   fail:
@@ -22,9 +23,13 @@ inputs:
     required: false
     default: 'true'
   fail-on-dynamic-code:
-    description: Set to 'true' to fail on dynamic code (eval, new Function) too; by default it is only a warning.
+    description: Set to 'true' to fail on dynamic code (eval, new Function) too, or 'false' to keep it a warning; left out, the config file decides (a warning by default).
     required: false
-    default: 'false'
+    default: ''
+  config:
+    description: The config file to read; left out, mv3-remote-code-check.config.json or the mv3RemoteCodeCheck key of package.json is looked for from the working directory up to the repository root. Set to 'false' to read none.
+    required: false
+    default: ''
 
 outputs:
   found:
@@ -46,12 +51,15 @@ runs:
         INPUT_EXCLUDE: ${{ inputs.exclude }}
         INPUT_FAIL: ${{ inputs.fail }}
         INPUT_FAIL_ON_DYNAMIC_CODE: ${{ inputs.fail-on-dynamic-code }}
+        INPUT_CONFIG: ${{ inputs.config }}
       run: |
         args=()
         while IFS= read -r line; do [ -n "$line" ] && args+=("$line"); done <<< "$INPUT_PATH"
         while IFS= read -r line; do [ -n "$line" ] && args+=(--allow "$line"); done <<< "$INPUT_ALLOW"
         while IFS= read -r line; do [ -n "$line" ] && args+=(--exclude "$line"); done <<< "$INPUT_EXCLUDE"
         if [ "$INPUT_FAIL_ON_DYNAMIC_CODE" = true ]; then args+=(--fail-on-dynamic-code); fi
+        if [ "$INPUT_FAIL_ON_DYNAMIC_CODE" = false ]; then args+=(--no-fail-on-dynamic-code); fi
+        if [ "$INPUT_CONFIG" = false ]; then args+=(--no-config); elif [ -n "$INPUT_CONFIG" ]; then args+=(--config "$INPUT_CONFIG"); fi
         set +e
         node "$GITHUB_ACTION_PATH/bin/mv3-remote-code-check.js" "${args[@]}" --format github --summary "$GITHUB_STEP_SUMMARY"
         code=$?

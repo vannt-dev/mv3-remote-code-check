@@ -60,21 +60,57 @@ dist: 1 reference(s) to remotely hosted code, which Manifest V3 forbids
   chunks/vendor-pdf.js:1:48213  https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js  (address on a script CDN)
 ```
 
-| Option                   | Meaning                                                                     |
-| ------------------------ | --------------------------------------------------------------------------- |
-| `--format <f>`           | `text` (default), `json`, `github` (annotations) or `sarif` (code scanning) |
-| `--allow <text>`         | leave out findings that contain this text (repeatable)                      |
-| `--exclude <glob>`       | leave out files matching the glob, `*` one segment, `**` any (repeatable)   |
-| `--summary <file>`       | also append a Markdown report there, e.g. `$GITHUB_STEP_SUMMARY`            |
-| `--fail-on-dynamic-code` | exit 1 on `dynamic-code` warnings too, and report them as errors            |
+| Option                      | Meaning                                                                     |
+| --------------------------- | --------------------------------------------------------------------------- |
+| `--format <f>`              | `text` (default), `json`, `github` (annotations) or `sarif` (code scanning) |
+| `--allow <text>`            | leave out findings that contain this text (repeatable)                      |
+| `--exclude <glob>`          | leave out files matching the glob, `*` one segment, `**` any (repeatable)   |
+| `--summary <file>`          | also append a Markdown report there, e.g. `$GITHUB_STEP_SUMMARY`            |
+| `--fail-on-dynamic-code`    | exit 1 on `dynamic-code` warnings too, and report them as errors            |
+| `--no-fail-on-dynamic-code` | keep them warnings, even when the config file says otherwise                |
+| `--config <file>`           | read the settings from this file instead of looking for one                 |
+| `--no-config`               | do not read a config file                                                   |
 
 With several paths, `--format json` prints one array with a report per path. Every path is read
 before anything is printed: if one cannot be read, the command exits 2 with the error and no report.
 
 The exit code is 0 when the package is clean, 1 when remotely hosted code was found, and 2 on a usage
-error or an unreadable package. `dynamic-code` warnings leave it at 0 unless `--fail-on-dynamic-code`
-is given. In `--format json` they are in a `warnings` array next to `findings`; in `github` and
-`sarif` they have the level `warning` (`error` with the flag).
+error, an unreadable package or a bad config file. `dynamic-code` warnings leave it at 0 unless
+`--fail-on-dynamic-code` is given. In `--format json` they are in a `warnings` array next to
+`findings`; in `github` and `sarif` they have the level `warning` (`error` with the flag).
+
+### Config file
+
+So that CI and local runs check the same way without long command lines, put the settings in
+`mv3-remote-code-check.config.json`:
+
+```json
+{
+  "paths": ["dist"],
+  "exclude": ["**/*.map", "sandbox/**"],
+  "allow": ["https://example.com/known.js"],
+  "format": "text",
+  "failOnDynamicCode": true
+}
+```
+
+Then `npx mv3-remote-code-check` with no arguments checks `dist` with those settings. The same object
+can instead sit under a `"mv3RemoteCodeCheck"` key in `package.json`.
+
+- **Where it is looked for:** in the current folder, then each folder above it, up to the repository
+  root (the folder that holds `.git`). In each folder the config file comes before `package.json`;
+  the first one found is used. `--config <file>` names one (a `package.json` is read for its key),
+  and `--no-config` reads none.
+- **Keys:** `paths`, `allow` and `exclude` (arrays of strings), `format` (`text`, `json`, `github` or
+  `sarif`) and `failOnDynamicCode` (`true` or `false`). `paths` are read from the config file's
+  folder, wherever the command runs; `exclude` globs match inside the package, as on the command line.
+- **Precedence:** command-line flags, then the config file, then the defaults. Paths given on the
+  command line replace the config's `paths`, `--format` replaces `format`, and
+  `--fail-on-dynamic-code` / `--no-fail-on-dynamic-code` replace `failOnDynamicCode`. `--allow` and
+  `--exclude` **add to** the config's lists rather than replace them, so the exceptions the project
+  keeps in the file always apply; use `--no-config` to drop them.
+- **Errors:** a key the tool does not know is a warning on stderr and is ignored. A file that is not
+  valid JSON, is not an object, or has a value of the wrong type stops the run with exit code 2.
 
 ## GitHub Action
 
@@ -88,7 +124,14 @@ is given. In `--format json` they are in a `warnings` array next to `findings`; 
     # exclude: '**/*.map'
     # fail: 'false'   # report only
     # fail-on-dynamic-code: 'true'   # also fail on eval / new Function
+    # config: ci/mv3-check.json   # or 'false' to read no config file
 ```
+
+The action reads the [config file](#config-file) the same way, from the workspace, so with one in
+the repository `uses: vannt-dev/mv3-remote-code-check@v0` needs no inputs at all. An input that is
+set wins over the file: `path` replaces its `paths`, `fail-on-dynamic-code` (`'true'` or `'false'`)
+replaces `failOnDynamicCode`, and `allow` / `exclude` add to its lists. The action always writes
+`github` annotations and the job summary, so the file's `format` does not apply there.
 
 Findings are shown as annotations and in the job summary. The output `found` is `'true'` when
 remotely hosted code was found (or dynamic code, with `fail-on-dynamic-code`). The action builds the checker from its own checkout (about 15 seconds) and
@@ -126,6 +169,8 @@ export default defineConfig({
 - `check` (default `true`): after the bundle is written, reads the whole output folder and fails the
   build if anything is left.
 - `allow`, `exclude`: as in the CLI.
+
+The plugin does not read the config file; pass `allow` and `exclude` to it directly.
 
 ## API
 
