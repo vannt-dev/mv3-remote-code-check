@@ -1,6 +1,6 @@
 # repokeeper configuration: https://github.com/vannt-dev/repokeeper
 schema: 1
-standard: 1.4.4
+standard: 1.4.5
 platform: github
 stacks:
   - node
@@ -13,6 +13,7 @@ modules:
   deps: true
   gitignore: true
   drift: false
+  workflow_lint: true
   health:
     license: MIT
     copyright: 2026 Van Nguyen

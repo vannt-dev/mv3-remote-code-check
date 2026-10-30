@@ -1,0 +1,10 @@
+# Managed by repokeeper (https://github.com/vannt-dev/repokeeper). Edits are reported by `repokeeper check`. Keys and jobs you add yourself are left alone.
+
+rules:
+  dependabot-cooldown:
+    ignore:
+      - dependabot.yml
+  unpinned-uses:
+    config:
+      policies:
+        vannt-dev/repokeeper/*: ref-pin

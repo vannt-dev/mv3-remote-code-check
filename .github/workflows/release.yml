@@ -19,7 +19,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           BRANCH: ${{ needs.release.outputs.pr_branch }}
         run: |
-          for attempt in 1 2 3 4 5 6; do
+          for _ in 1 2 3 4 5 6; do
             ids=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs?branch=$BRANCH&event=pull_request&status=action_required" --jq '.workflow_runs[].id')
             [ -n "$ids" ] && break
             sleep 10
@@ -44,8 +44,10 @@ jobs:
       contents: read
       id-token: write
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: '24'
           registry-url: https://registry.npmjs.org
@@ -62,7 +64,10 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # true on purpose (zizmor artipacked): the next step pushes the tag with these credentials.
+          persist-credentials: true
       - name: Move the major tag to this release
         env:
           TAG: ${{ needs.release.outputs.tag_name }}

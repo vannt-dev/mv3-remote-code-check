@@ -1,6 +1,6 @@
 {
   "lockVersion": 1,
-  "standard": "1.4.4",
+  "standard": "1.4.5",
   "entries": [
     {
       "id": "block:.gitattributes#editorconfig",
@@ -40,15 +40,6 @@
       "target": {
         "kind": "file",
         "path": ".github/CODEOWNERS"
-      }
-    },
-    {
-      "id": "file:.github/dependabot.yml",
-      "module": "deps",
-      "hash": "963af5766e12381d12a77362fc3153e4e0e9efcf89b9e91b65ea439179dcfd24",
-      "target": {
-        "kind": "file",
-        "path": ".github/dependabot.yml"
       }
     },
     {
@@ -275,7 +266,7 @@
     {
       "id": "yaml:.github/workflows/release.yml#[\"jobs\",\"release-pr-ci\"]",
       "module": "release",
-      "hash": "6947fbe0732aa7cd806b68053d40c62cdc538fe529a119a0f52a7725a1f38d7a",
+      "hash": "1117dc1426767dd5b489d7f4530702c6e3c3cbc0d543253b6fc078a1de94f980",
       "target": {
         "kind": "yaml",
         "path": ".github/workflows/release.yml",
@@ -331,6 +322,97 @@
         "path": ".github/workflows/release.yml",
         "keyPath": [
           "permissions"
+        ]
+      }
+    },
+    {
+      "id": "yaml:.github/workflows/workflow-lint.yml#[\"concurrency\"]",
+      "module": "workflow_lint",
+      "hash": "1f382fb1b73ab99e2883b98aae10e56692a59ccaaa72d990ff8fdae435f46cd6",
+      "target": {
+        "kind": "yaml",
+        "path": ".github/workflows/workflow-lint.yml",
+        "keyPath": [
+          "concurrency"
+        ]
+      }
+    },
+    {
+      "id": "yaml:.github/workflows/workflow-lint.yml#[\"jobs\",\"lint\"]",
+      "module": "workflow_lint",
+      "hash": "a976d3804d27022fd2dbff5e76fe3b770e9d76ee34b70632cbe5dd9dd21a769b",
+      "target": {
+        "kind": "yaml",
+        "path": ".github/workflows/workflow-lint.yml",
+        "keyPath": [
+          "jobs",
+          "lint"
+        ]
+      }
+    },
+    {
+      "id": "yaml:.github/workflows/workflow-lint.yml#[\"name\"]",
+      "module": "workflow_lint",
+      "hash": "64739528926b30de90a0f00ee97b42462c1fc7081c2762ab291f456731cc6615",
+      "target": {
+        "kind": "yaml",
+        "path": ".github/workflows/workflow-lint.yml",
+        "keyPath": [
+          "name"
+        ]
+      }
+    },
+    {
+      "id": "yaml:.github/workflows/workflow-lint.yml#[\"on\"]",
+      "module": "workflow_lint",
+      "hash": "31e3f4bc83d3364dc4d2fa522809b765d0c94950c9fcc8a1c36ab9ffd48e6b72",
+      "target": {
+        "kind": "yaml",
+        "path": ".github/workflows/workflow-lint.yml",
+        "keyPath": [
+          "on"
+        ]
+      }
+    },
+    {
+      "id": "yaml:.github/workflows/workflow-lint.yml#[\"permissions\"]",
+      "module": "workflow_lint",
+      "hash": "d8d6aceb1abc41990618a503082c3badcca8897feee0976f222af5b74e30bec2",
+      "target": {
+        "kind": "yaml",
+        "path": ".github/workflows/workflow-lint.yml",
+        "keyPath": [
+          "permissions"
+        ]
+      }
+    },
+    {
+      "id": "yaml:.github/zizmor.yml#[\"rules\",\"dependabot-cooldown\",\"ignore\"]",
+      "module": "workflow_lint",
+      "hash": "9e087301b24052635cc7debae4f4455b2deb328be5f4fdad330a249ed20b9e0f",
+      "target": {
+        "kind": "yaml",
+        "path": ".github/zizmor.yml",
+        "keyPath": [
+          "rules",
+          "dependabot-cooldown",
+          "ignore"
+        ]
+      }
+    },
+    {
+      "id": "yaml:.github/zizmor.yml#[\"rules\",\"unpinned-uses\",\"config\",\"policies\",\"vannt-dev/repokeeper/*\"]",
+      "module": "workflow_lint",
+      "hash": "0ce51305528207a916dbf6d36d58bcfd72757a7b1e8fa88904d28a3ea9ebf581",
+      "target": {
+        "kind": "yaml",
+        "path": ".github/zizmor.yml",
+        "keyPath": [
+          "rules",
+          "unpinned-uses",
+          "config",
+          "policies",
+          "vannt-dev/repokeeper/*"
         ]
       }
     }
