@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.6.0](https://github.com/vannt-dev/mv3-remote-code-check/compare/v0.5.0...v0.6.0) (2026-10-31)
+
+
+### Features
+
+* name the npm package a finding came from ([#18](https://github.com/vannt-dev/mv3-remote-code-check/issues/18)) ([9abcb59](https://github.com/vannt-dev/mv3-remote-code-check/commit/9abcb59a84a70fb0cac08eb9a41ff0614df457a7))
+
 ## [0.5.0](https://github.com/vannt-dev/mv3-remote-code-check/compare/v0.4.0...v0.5.0) (2026-10-29)
 
 

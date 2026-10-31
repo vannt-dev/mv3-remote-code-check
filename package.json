@@ -1,6 +1,6 @@
 {
   "name": "mv3-remote-code-check",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "description": "Reads a built browser extension the way the Chrome Web Store review does and fails on remotely hosted code (Manifest V3), as a CLI, a GitHub Action and a Vite plugin.",
   "keywords": [
     "chrome-extension",
