@@ -356,6 +356,23 @@ dist: 2 reference(s) to remotely hosted code, which Manifest V3 forbids
       https://example.com/known.js</pre>
       </section>
 
+      <section id="config">
+        <h2 data-i18n="cfg.h2">One config file for CI and local runs</h2>
+        <p class="sub" data-i18n="cfg.sub">
+          Put the settings in <code>mv3-remote-code-check.config.json</code>, or under a <code>"mv3RemoteCodeCheck"</code> key in
+          <code>package.json</code>, and <code>npx mv3-remote-code-check</code> needs no arguments. It can set <code>paths</code>,
+          <code>allow</code>, <code>exclude</code>, <code>format</code> and <code>failOnDynamicCode</code>; the action reads it too. Flags
+          win over the file, except that <code>--allow</code> and <code>--exclude</code> add to its lists.
+          <code>--no-fail-on-dynamic-code</code> keeps warnings as warnings, and <code>--no-config</code> reads no file.
+        </p>
+        <pre>
+{
+  "paths": ["dist"],
+  "exclude": ["**/*.map"],
+  "failOnDynamicCode": true
+}</pre>
+      </section>
+
       <section id="vite">
         <h2 data-i18n="vite.h2">In your Vite build</h2>
         <pre>import { remoteCodeGuard } from 'mv3-remote-code-check/vite';
@@ -422,6 +439,9 @@ export default defineConfig({
           'act.h2': 'Trong CI, trước mỗi lần phát hành',
           'act.sub':
             'Trỏ action vào thư mục đã build hoặc file ZIP gửi Store. Kết quả hiện thành annotation và trong job summary; action chỉ cần Node.js có sẵn trên runner.',
+          'cfg.h2': 'Một file config cho CI và khi chạy ở máy',
+          'cfg.sub':
+            'Đặt cấu hình trong <code>mv3-remote-code-check.config.json</code>, hoặc dưới key <code>"mv3RemoteCodeCheck"</code> trong <code>package.json</code>, là <code>npx mv3-remote-code-check</code> chạy không cần tham số. File đặt được <code>paths</code>, <code>allow</code>, <code>exclude</code>, <code>format</code> và <code>failOnDynamicCode</code>; action cũng đọc file này. Flag trên dòng lệnh thắng file, trừ <code>--allow</code> và <code>--exclude</code> thì cộng thêm vào danh sách trong file. <code>--no-fail-on-dynamic-code</code> giữ cảnh báo là cảnh báo, còn <code>--no-config</code> không đọc file nào.',
           'vite.h2': 'Trong bản build Vite',
           'gs.h2': 'Bắt đầu',
           'gs.sub': 'Node.js 22.18 trở lên. Không có dependency lúc chạy.',
