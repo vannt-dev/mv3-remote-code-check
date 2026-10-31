@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../node_modules/cdn-helper/index.js", "../../node_modules/@acme/loader/index.js", "../../src/background.js"],
+  "sourcesContent": ["export function workerPath(path) {\n  return path || 'https://cdn.jsdelivr.net/npm/cdn-helper@1.2.3/worker.min.js';\n}\n", "export function run(code) {\n  return new Function(code)();\n}\n", "import { workerPath } from 'cdn-helper';\nimport { run } from '@acme/loader';\n\nconst own = 'https://unpkg.com/own-lib@2.0.0/own.js';\nconsole.log(workerPath(), own, run('return 1'));\n"],
+  "mappings": "MAAO,SAASA,EAAWC,EAAM,CAC/B,OAAOA,GAAQ,6DACjB,CCFO,SAASC,EAAIC,EAAM,CACxB,OAAO,IAAI,SAASA,CAAI,EAAE,CAC5B,CCCA,IAAMC,EAAM,yCACZ,QAAQ,IAAIC,EAAW,EAAGD,EAAKE,EAAI,UAAU,CAAC",
+  "names": ["workerPath", "path", "run", "code", "own", "workerPath", "run"]
+}

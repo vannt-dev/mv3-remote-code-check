@@ -48,6 +48,35 @@ see `Function("…")` without `new`, indirect eval such as `(0, eval)(x)`, or a 
 that holds a string. `--allow` and `--exclude` apply to warnings as well; a script that runs only in
 a sandboxed page (`sandbox.pages` in the manifest), where eval is allowed, is one to `--exclude`.
 
+### Which npm package it came from
+
+A finding in a bundle such as `dist/vendor.js` names the npm package it came from when it can, so
+you know which dependency to update, configure or replace:
+
+```
+  vendor.js:1:48213  https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/worker.min.js  (address on a script CDN)
+      from npm package tesseract.js@5.1.1 via source map
+```
+
+- **Source map (certain).** When the file has a source map (a `//# sourceMappingURL=` comment, an
+  inline `data:` map, or `<file>.map` beside it), the finding's line and column are mapped back to
+  the original file. If that file lies in `node_modules/<name>` (also `@scope/name`, pnpm's
+  `.pnpm/<name>@<version>/node_modules/<name>`, and nested `node_modules`, where the innermost
+  counts), that package is named. The version comes from a pnpm path, or from the package's
+  `package.json` when the scanned folder sits in the project (a `.zip` or `.crx` gives only the pnpm
+  version). A finding the map places in your own code names no package.
+- **Bundler comment (a guess).** Without a map, the module comments that esbuild
+  (`// node_modules/x/index.js`) and webpack in development mode (`/***/ "./node_modules/x/…"`) write
+  are read, and the last one before the finding is taken. The line then reads
+  `probably from npm package x (guessed from a bundler comment)`. Minified bundles have no such
+  comments; build with source maps for an answer there (Vite / Rollup `build.sourcemap`, esbuild
+  `--sourcemap`, webpack `devtool`).
+
+In `--format json` the finding has a `package` field (`name`, `version` when known, `via`:
+`source-map` or `module-comment`, and the `source` path); in `sarif` the result has the properties
+`npmPackage`, `npmPackageVersion`, `npmPackageVia` and `npmPackageSource`; `github` annotations and
+the Markdown summary name the package too. It never changes the exit code.
+
 ## CLI
 
 ```sh
@@ -180,7 +209,7 @@ The plugin does not read the config file; pass `allow` and `exclude` to it direc
 import { scanPath, findRemoteCode, stripRemoteCode, checkManifest } from 'mv3-remote-code-check';
 
 const { files, findings, warnings } = scanPath('dist'); // or a .zip / .crx
-// findings: [{ file, line, column, match, rule }]
+// findings: [{ file, line, column, match, rule, package? }]
 // warnings: the same shape, rule 'dynamic-code'
 ```
 
@@ -191,6 +220,10 @@ pieces (apart from the script-tag case above). It also does not decide whether c
 own server counts as remote code. Read the
 [Chrome Web Store policy](https://developer.chrome.com/docs/webstore/program-policies/mv3-requirements)
 for those cases.
+
+The npm package of a finding is left out when the source map is an indexed map (`sections`) or
+sits on another host, and the guess from bundler comments can be wrong in a bundle that mixes
+modules without marking where each ends (esbuild marks only where each starts).
 
 ## License
 

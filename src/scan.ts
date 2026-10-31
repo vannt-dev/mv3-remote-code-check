@@ -1,9 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { locateRemoteCode, type Rule } from './patterns.ts';
+import { locateRemoteCode, type Located, type Rule } from './patterns.ts';
 import { checkManifest } from './manifest.ts';
 import { locateDynamicCode } from './dynamic.ts';
 import { zipEntries, type PackageFile } from './zip.ts';
+import { OriginFinder, type NpmPackage } from './origin.ts';
 
 /** Files the review reads as code or as markup that can load code. */
 export const SCANNED = /\.(?:m?js|cjs|html?|css|json|svg|xhtml)$/i;
@@ -20,6 +21,8 @@ export interface Finding {
   match: string;
   rule: Rule;
   detail?: string;
+  /** The npm package the finding came from, when a source map or a bundler comment says so. */
+  package?: NpmPackage;
 }
 
 export interface ScanOptions {
@@ -52,18 +55,22 @@ export function scanFiles(files: readonly PackageFile[], { allow = [], exclude =
   const manifestName = shallowestManifest(files.map((f) => f.name));
   const findings: Finding[] = [];
   const warnings: Finding[] = [];
+  const origins = new OriginFinder(files);
   let count = 0;
   for (const file of files) {
     if (!SCANNED.test(file.name) || excluded.some((re) => re.test(file.name))) continue;
     count++;
     const text = file.read().toString('utf8');
-    for (const { match, rule, line, column } of locateRemoteCode(text)) {
-      if (!allowed(match)) findings.push({ file: file.name, line, column, match, rule });
-    }
+    let originOf: ReturnType<OriginFinder['forFile']> | undefined;
+    const take = (into: Finding[], { match, rule, index, line, column }: Located) => {
+      if (allowed(match)) return;
+      originOf ??= origins.forFile(file, text);
+      const pkg = originOf(index, line, column);
+      into.push({ file: file.name, line, column, match, rule, ...(pkg ? { package: pkg } : {}) });
+    };
+    for (const located of locateRemoteCode(text)) take(findings, located);
     if (SCRIPTS.test(file.name)) {
-      for (const { match, rule, line, column } of locateDynamicCode(text)) {
-        if (!allowed(match)) warnings.push({ file: file.name, line, column, match, rule });
-      }
+      for (const located of locateDynamicCode(text)) take(warnings, located);
     }
     if (file.name === manifestName) {
       for (const finding of checkManifest(text)) {
@@ -94,7 +101,7 @@ function dirFiles(dir: string): PackageFile[] {
     .filter((entry) => entry.isFile())
     .map((entry) => {
       const full = path.join(entry.parentPath, entry.name);
-      return { name: path.relative(dir, full).split(path.sep).join('/'), read: () => fs.readFileSync(full) };
+      return { name: path.relative(dir, full).split(path.sep).join('/'), read: () => fs.readFileSync(full), path: full };
     })
     .filter(({ name }) => !name.split('/').includes('node_modules'));
 }

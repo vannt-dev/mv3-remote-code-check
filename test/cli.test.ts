@@ -110,6 +110,44 @@ test('sarif: one log for GitHub code scanning, every rule named, findings placed
   assert.equal(run([clean, '--format', 'sarif']).code, 0);
 });
 
+test('the npm package of a finding in text, json, github and sarif; the exit code stays the same', () => {
+  const bundles = path.join(import.meta.dirname, 'fixtures', 'bundles');
+  const mapped = path.join(bundles, 'esbuild-map');
+  const guessed = path.join(bundles, 'esbuild-plain');
+
+  const text = run([mapped]);
+  assert.equal(text.code, 1);
+  assert.match(text.out, /jsdelivr\S+ {2}\(address on a script CDN\)\n {6}from npm package cdn-helper via source map\n/);
+  assert.match(text.out, /unpkg\S+ {2}\(address on a script CDN\)\n(?! )/);
+  assert.match(text.out, /new Function\(n\) {2}\(dynamic code evaluation\)\n {6}from npm package @acme\/loader via source map\n/);
+  const plain = run([guessed]);
+  assert.equal(plain.code, 1);
+  assert.match(plain.out, /\n {6}probably from npm package cdn-helper \(guessed from a bundler comment\)\n/);
+  assert.equal(run([path.join(bundles, 'webpack-prod-plain')]).code, 1);
+  assert.equal(run([guessed, '--allow', 'jsdelivr', '--allow', 'unpkg']).code, 0);
+
+  const json = JSON.parse(run([mapped, '--format', 'json']).out) as ScanResult;
+  assert.deepEqual(json.findings[0]?.package, { name: 'cdn-helper', via: 'source-map', source: '../../node_modules/cdn-helper/index.js' });
+  assert.equal(json.findings[1]?.package, undefined);
+
+  assert.match(
+    run([guessed, '--format', 'github']).out,
+    /^::error [^\n]*::[^\n]*jsdelivr[^\n]* \(probably from npm package cdn-helper\)$/m
+  );
+
+  const sarif = JSON.parse(run([mapped, '--format', 'sarif']).out) as {
+    runs: { results: { message: { text: string }; properties?: Record<string, string> }[] }[];
+  };
+  const [first, second] = sarif.runs[0]?.results ?? [];
+  assert.deepEqual(first?.properties, {
+    npmPackage: 'cdn-helper',
+    npmPackageVia: 'source-map',
+    npmPackageSource: '../../node_modules/cdn-helper/index.js',
+  });
+  assert.match(first?.message.text ?? '', /from npm package cdn-helper via source map/);
+  assert.equal(second?.properties, undefined);
+});
+
 test('--allow and --version', () => {
   const dir = folder({ 'a.js': 'x="https://unpkg.com/a"' });
   assert.equal(run([dir, '--allow', 'unpkg.com/a']).code, 0);

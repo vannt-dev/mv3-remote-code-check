@@ -1,0 +1,1 @@
+(()=>{"use strict";console.log("https://cdn.jsdelivr.net/npm/cdn-helper@1.2.3/worker.min.js","https://unpkg.com/own-lib@2.0.0/own.js",new Function("return 1")())})();
