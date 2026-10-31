@@ -151,7 +151,7 @@ export function formatMarkdown(target: string, { files, findings, warnings }: Sc
     items
       .map(
         (f) =>
-          `| \`${where(f)}\` | ${RULE_TEXT[f.rule]}${f.package ? `, ${origin(f, false)}` : ''} |\`${shorten(f.match, 120).replaceAll('|', '\\|')}\` |\n`
+          `| \`${where(f)}\` | ${RULE_TEXT[f.rule]}${f.package ? `, ${origin(f, false)}` : ''} | \`${shorten(f.match, 120).replaceAll('|', '\\|')}\` |\n`
       )
       .join('');
   let text = findings.length

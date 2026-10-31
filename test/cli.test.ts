@@ -134,6 +134,12 @@ test('the npm package of a finding in text, json, github and sarif; the exit cod
     run([guessed, '--format', 'github']).out,
     /^::error [^\n]*::[^\n]*jsdelivr[^\n]* \(probably from npm package cdn-helper\)$/m
   );
+  const summary = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'mv3rc-cli-')), 'summary.md');
+  run([guessed, '--summary', summary]);
+  assert.match(
+    fs.readFileSync(summary, 'utf8'),
+    /\| address on a script CDN, probably from npm package cdn-helper \| `https:\/\/cdn\.jsdelivr/
+  );
 
   const sarif = JSON.parse(run([mapped, '--format', 'sarif']).out) as {
     runs: { results: { message: { text: string }; properties?: Record<string, string> }[] }[];

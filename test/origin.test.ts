@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { packageFromPath, scanFiles, scanPath, zipEntries, type Finding } from '../src/index.ts';
+import { scanFiles, scanPath, zipEntries, type Finding } from '../src/index.ts';
+import { packageFromPath } from '../src/origin.ts';
 import { parseSourceMap } from '../src/sourcemap.ts';
 import { makeZip } from './helpers.ts';
 
@@ -132,6 +133,12 @@ test('an inline data: map, a map named by sourceMappingURL, a zip, and a broken 
 
   const named = scan({ 'js/bg.js': `${code}//# sourceMappingURL=../maps/bg.js.map\n`, 'maps/bg.js.map': map });
   assert.equal(origin(byMatch(named.findings, 'jsdelivr')), 'cdn-helper@? source-map');
+  const fromRoot = scan({
+    'js/bg.js': `${code}//# sourceMappingURL=/maps/bg.js.map
+`,
+    'maps/bg.js.map': map,
+  });
+  assert.equal(origin(byMatch(fromRoot.findings, 'jsdelivr')), 'cdn-helper@? source-map');
 
   const zip = scanFiles(zipEntries(makeZip({ 'background.js': js, 'background.js.map': map.toString() })));
   assert.equal(origin(byMatch(zip.findings, 'jsdelivr')), 'cdn-helper@? source-map');

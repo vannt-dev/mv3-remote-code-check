@@ -11,5 +11,5 @@ export { locateDynamicCode } from './dynamic.ts';
 export { checkManifest, type ManifestFinding } from './manifest.ts';
 export { scanPath, scanFiles, findRemoteCodeInDir, type Finding, type ScanOptions, type ScanResult } from './scan.ts';
 export { zipEntries, type PackageFile } from './zip.ts';
-export { packageFromPath, type NpmPackage } from './origin.ts';
+export { type NpmPackage } from './origin.ts';
 export { remoteCodeGuard, type RemoteCodeGuardOptions, type RemoteCodeGuardPlugin } from './vite.ts';

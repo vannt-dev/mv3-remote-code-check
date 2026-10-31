@@ -92,14 +92,18 @@ export class OriginFinder {
       }
       if (url && /^[a-z][\w+.-]+:/i.test(url)) return undefined;
       const relative = url ? decodeURI(url.replace(/[?#].*$/, '')) : `${path.posix.basename(file.name)}.map`;
-      const inPackage = path.posix.normalize(path.posix.join(path.posix.dirname(file.name), relative)).replace(/^\//, '');
+      // An address that starts with / is from the root of the package.
+      const fromRoot = relative.startsWith('/');
+      const inPackage = fromRoot
+        ? path.posix.normalize(relative.slice(1))
+        : path.posix.normalize(path.posix.join(path.posix.dirname(file.name), relative));
       const entry = this.byName.get(inPackage);
       if (entry) {
         const map = parseSourceMap(entry.read().toString('utf8'));
         const dir = entry.path && path.dirname(entry.path);
         return map && { map, ...(dir ? { dir } : {}) };
       }
-      if (!file.path) return undefined;
+      if (!file.path || fromRoot) return undefined;
       const onDisk = path.resolve(path.dirname(file.path), relative);
       if (!fs.existsSync(onDisk)) return undefined;
       const map = parseSourceMap(fs.readFileSync(onDisk, 'utf8'));
