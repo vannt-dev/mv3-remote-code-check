@@ -334,6 +334,11 @@ dist: 2 reference(s) to remotely hosted code, which Manifest V3 forbids
             </tr>
           </table>
         </div>
+        <p class="sub" data-i18n="what.pkg" style="margin-top: 16px">
+          Each finding in a bundle names the npm package it came from, for certain with a source map:
+          <code>from npm package lodash@4.17.21 via source map</code>. Without one, it is a marked guess from esbuild or webpack module
+          comments. It is in the text, JSON and SARIF output and never changes the exit code.
+        </p>
       </section>
 
       <section id="action">
@@ -412,6 +417,8 @@ export default defineConfig({
             "<code>content_security_policy.extension_pages</code> cho phép nguồn script ngoài gói, hoặc <code>'unsafe-eval'</code>.",
           'what.dyn':
             '<code>eval(…)</code>, <code>new Function(…)</code> và timer nhận chuỗi trong file script. Mặc định chỉ cảnh báo; <code>--fail-on-dynamic-code</code> biến nó thành lỗi.',
+          'what.pkg':
+            'Mỗi kết quả trong file bundle ghi rõ package npm nào gây ra: chắc chắn khi file có source map (<code>from npm package lodash@4.17.21 via source map</code>), còn không thì đoán từ comment module của esbuild hoặc webpack và ghi rõ là đoán. Thông tin có trong output text, JSON và SARIF, không đổi exit code.',
           'act.h2': 'Trong CI, trước mỗi lần phát hành',
           'act.sub':
             'Trỏ action vào thư mục đã build hoặc file ZIP gửi Store. Kết quả hiện thành annotation và trong job summary; action chỉ cần Node.js có sẵn trên runner.',

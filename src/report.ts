@@ -18,8 +18,18 @@ const DYNAMIC_TITLE = 'Dynamic code: eval, new Function or a string timer, block
 const where = (f: Finding) => `${f.file}${f.line ? `:${f.line}:${f.column}` : ''}`;
 const shorten = (text: string, max = 160) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
 
+/** The npm package a finding came from, in a few words; a guess says so. Empty without one. */
+function origin(f: Finding, long = true): string {
+  const pkg = f.package;
+  if (!pkg) return '';
+  const id = pkg.version ? `${pkg.name}@${pkg.version}` : pkg.name;
+  if (pkg.via === 'source-map') return `from npm package ${id}${long ? ' via source map' : ''}`;
+  return `probably from npm package ${id}${long ? ' (guessed from a bundler comment)' : ''}`;
+}
+
 export function formatText(target: string, { files, findings, warnings }: ScanResult, level: DynamicLevel = 'warning'): string {
-  const list = (items: Finding[]) => items.map((f) => `  ${where(f)}  ${shorten(f.match)}  (${RULE_TEXT[f.rule]})\n`).join('');
+  const list = (items: Finding[]) =>
+    items.map((f) => `  ${where(f)}  ${shorten(f.match)}  (${RULE_TEXT[f.rule]})\n${f.package ? `      ${origin(f)}\n` : ''}`).join('');
   let text = findings.length
     ? `${target}: ${findings.length} reference(s) to remotely hosted code, which Manifest V3 forbids\n${list(findings)}`
     : `${target}: no remotely hosted code in ${files} files\n`;
@@ -47,7 +57,8 @@ export function formatGithub(target: string, result: ScanResult, fileRoot: strin
     }
     props.push(`title=${escapeProperty(title ?? `Remote code: ${RULE_TEXT[f.rule]}`)}`);
     const place = fileRoot === null ? `${target}!/${where(f)}: ` : '';
-    return `::${command} ${props.join(',')}::${escapeData(`${place}${shorten(f.match, 300)}`)}`;
+    const from = f.package ? ` (${origin(f, false)})` : '';
+    return `::${command} ${props.join(',')}::${escapeData(`${place}${shorten(f.match, 300)}${from}`)}`;
   };
   const out = [...result.findings.map(annotate('error')), ...result.warnings.map(annotate(level, DYNAMIC_TITLE))];
   out.push(formatText(target, result, level).trimEnd());
@@ -92,7 +103,7 @@ export function formatSarif(
       return {
         ruleId: f.rule,
         level: f.rule === 'dynamic-code' ? level : 'error',
-        message: { text: `${place}${shorten(f.match, 300)} (${RULE_TEXT[f.rule]})` },
+        message: { text: `${place}${shorten(f.match, 300)} (${RULE_TEXT[f.rule]}${f.package ? `; ${origin(f)}` : ''})` },
         locations: [
           {
             physicalLocation: {
@@ -101,6 +112,16 @@ export function formatSarif(
             },
           },
         ],
+        ...(f.package
+          ? {
+              properties: {
+                npmPackage: f.package.name,
+                ...(f.package.version ? { npmPackageVersion: f.package.version } : {}),
+                npmPackageVia: f.package.via,
+                npmPackageSource: f.package.source,
+              },
+            }
+          : {}),
       };
     })
   );
@@ -127,7 +148,12 @@ export function formatSarif(
 export function formatMarkdown(target: string, { files, findings, warnings }: ScanResult, level: DynamicLevel = 'warning'): string {
   const table = (items: Finding[]) =>
     '| Where | What | Found |\n| --- | --- | --- |\n' +
-    items.map((f) => `| \`${where(f)}\` | ${RULE_TEXT[f.rule]} | \`${shorten(f.match, 120).replaceAll('|', '\\|')}\` |\n`).join('');
+    items
+      .map(
+        (f) =>
+          `| \`${where(f)}\` | ${RULE_TEXT[f.rule]}${f.package ? `, ${origin(f, false)}` : ''} | \`${shorten(f.match, 120).replaceAll('|', '\\|')}\` |\n`
+      )
+      .join('');
   let text = findings.length
     ? `### Remote code check\n\n\`${target}\`: **${findings.length}** reference(s) to remotely hosted code, ` +
       `which Manifest V3 forbids.\n\n${table(findings)}`

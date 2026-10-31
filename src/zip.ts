@@ -8,6 +8,8 @@ const LOCAL_FILE_HEADER = 0x04034b50;
 export interface PackageFile {
   name: string;
   read: () => Buffer | string;
+  /** The file on disk, when the package is a folder: used to find package.json files beside it. */
+  path?: string;
 }
 
 /**
