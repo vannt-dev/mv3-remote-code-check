@@ -13,6 +13,11 @@ addresses before you upload the package, so the review does not have to.
 It works as a CLI, a GitHub Action and a Vite / Rollup plugin, written in TypeScript with types for
 the API and the plugin. It has no runtime dependencies.
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/vannt-dev/mv3-remote-code-check/main/docs/diagrams/overview-dark.svg">
+  <img alt="mv3-remote-code-check reads a built extension folder, .zip or .crx (with the allow and exclude settings) as the Store review does, finds remote script addresses, a manifest CSP that allows remote sources and dynamic code, names the npm package each came from, and writes a report and an exit code that fails the build on remote code; its Vite plugin also strips CDN addresses from the bundle." src="https://raw.githubusercontent.com/vannt-dev/mv3-remote-code-check/main/docs/diagrams/overview-light.svg">
+</picture>
+
 ## What it reports
 
 | Rule                 | Example                                                                             |

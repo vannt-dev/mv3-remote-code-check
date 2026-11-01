@@ -1,0 +1,26 @@
+%% Re-render the SVGs after editing: npm run diagrams
+flowchart LR
+  subgraph input ["What it reads"]
+    direction TB
+    vite["Vite / Rollup build<br/>with the plugin"] -- "strips CDN<br/>addresses" --> pkg["Built extension<br/>folder, .zip or .crx"]
+    settings["Config file<br/>allow and exclude"]
+  end
+
+  subgraph check ["mv3-remote-code-check<br/>as a CLI, a GitHub Action<br/>or a Vite plugin"]
+    direction TB
+    read["Read the package<br/>files, as the Store<br/>review does"]
+    remote["Find remote<br/>script addresses"]
+    csp["Check the<br/>manifest CSP"]
+    dyn["Find eval and<br/>new Function"]
+    origin["Name the npm<br/>package it<br/>came from"]
+    read --> remote & csp & dyn
+    remote --> origin
+    dyn -- warnings --> origin
+  end
+
+  subgraph output ["What comes out"]
+    direction TB
+    report["Report<br/>text, JSON, SARIF,<br/>annotations"] -- "remote code<br/>found" --> exit["Exit code 1<br/>fails the build"]
+  end
+
+  input --> check --> output
