@@ -46,3 +46,20 @@ jobs:
         run: |
           test "$CLEAN" = false
           test "$REMOTE" = true
+  result:
+    name: CI result
+    if: always()
+    needs:
+      - node
+      - commits
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Every job passed or was skipped
+        env:
+          RESULTS: ${{ join(needs.*.result, ' ') }}
+        run: |
+          echo "job results: $RESULTS"
+          case " $RESULTS " in
+            *" failure "*|*" cancelled "*) exit 1 ;;
+          esac
