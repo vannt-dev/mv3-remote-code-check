@@ -1,6 +1,6 @@
 # repokeeper configuration: https://github.com/vannt-dev/repokeeper
 schema: 1
-standard: 1.4.5
+standard: 1.5.0
 platform: github
 stacks:
   - node
