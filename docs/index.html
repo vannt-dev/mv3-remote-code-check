@@ -550,14 +550,6 @@ bundles/esbuild-map: 1 warning(s): dynamic code, which the MV3 content security 
         </div>
       </header>
 
-      <pre><span class="dim">$</span> npx mv3-remote-code-check dist
-dist: 2 reference(s) to remotely hosted code, which Manifest V3 forbids
-  <span class="miss">chunks/vendor-pdf.js:1:48213  https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js</span>  (address on a script CDN)
-  <span class="miss">vendor/tesseract/worker.min.js:2:92596  https://cdn.jsdelivr.net/npm/@tesseract.js-data/</span>  (address on a script CDN)
-
-<span class="dim">$</span> npx mv3-remote-code-check universal-file-converter-v1.2.2.zip
-<span class="ok">universal-file-converter-v1.2.2.zip: no remotely hosted code in 34 files</span></pre>
-
       <section id="why">
         <h2 data-i18n="why.h2">Why</h2>
         <p class="sub" data-i18n="why.sub">
