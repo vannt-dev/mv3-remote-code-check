@@ -12,43 +12,61 @@
       rel="icon"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2315803d'/%3E%3Cpath d='M16 6l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V9z' fill='none' stroke='white' stroke-width='2.4' stroke-linejoin='round'/%3E%3Cpath d='M12 16l3 3 5-6' fill='none' stroke='white' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E"
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
     <style>
       :root {
-        --bg: #ffffff;
-        --fg: #111827;
-        --muted: #4b5563;
-        --line: #e5e7eb;
-        --accent: #15803d;
-        --accent-fg: #ffffff;
+        --bg: #f7f8fc;
+        --fg: #0f172a;
+        --muted: #55607a;
+        --line: #dde2ee;
         --code-bg: #0f172a;
         --code-fg: #e2e8f0;
-        --card: #f9fafb;
+        --card: #ffffff;
+        --surface-2: #eef1f8;
+        --shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.06);
         --red: #f87171;
         --green: #4ade80;
+        --accent: #15803d;
+        --accent-2: #4f46e5;
+        --accent-soft: #e8f3ec;
+        --accent-fg: #ffffff;
       }
       @media (prefers-color-scheme: dark) {
         :root:not([data-theme='light']) {
           --bg: #0b1020;
-          --fg: #e5e7eb;
-          --muted: #9ca3af;
-          --line: #1f2937;
+          --fg: #e7ecf6;
+          --muted: #9aa6c2;
+          --line: #26324d;
+          --code-bg: #070b16;
+          --code-fg: #dbe4f5;
+          --card: #121a2e;
+          --surface-2: #18223a;
+          --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
           --accent: #4ade80;
+          --accent-2: #8b87ff;
+          --accent-soft: #10291c;
           --accent-fg: #0b1020;
-          --code-bg: #111827;
-          --code-fg: #e5e7eb;
-          --card: #111827;
         }
       }
       :root[data-theme='dark'] {
         --bg: #0b1020;
-        --fg: #e5e7eb;
-        --muted: #9ca3af;
-        --line: #1f2937;
+        --fg: #e7ecf6;
+        --muted: #9aa6c2;
+        --line: #26324d;
+        --code-bg: #070b16;
+        --code-fg: #dbe4f5;
+        --card: #121a2e;
+        --surface-2: #18223a;
+        --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 24px rgba(0, 0, 0, 0.25);
         --accent: #4ade80;
+        --accent-2: #8b87ff;
+        --accent-soft: #10291c;
         --accent-fg: #0b1020;
-        --code-bg: #111827;
-        --code-fg: #e5e7eb;
-        --card: #111827;
       }
       * {
         box-sizing: border-box;
@@ -225,44 +243,312 @@
       footer a {
         color: var(--fg);
       }
+      /* The look of the aiws-factory page (palette, type, cards) with a hero like junto's: a terminal
+         of real output beside the text. Each tool keeps its own accent. */
+      body {
+        font:
+          16px/1.65 'Be Vietnam Pro',
+          system-ui,
+          -apple-system,
+          'Segoe UI',
+          Roboto,
+          sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+      pre,
+      code {
+        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      }
+      .topbar {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        display: block;
+        padding: 0;
+        backdrop-filter: saturate(160%) blur(10px);
+        background: color-mix(in srgb, var(--bg) 82%, transparent);
+        border-bottom: 1px solid var(--line);
+      }
+      .topbar .wrap {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        min-height: 60px;
+        flex-wrap: wrap;
+      }
+      .topbar .brand {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        color: var(--fg);
+        text-decoration: none;
+      }
+      .logo {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        background: var(--accent);
+        display: grid;
+        place-items: center;
+      }
+      .navlinks {
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        margin-left: auto;
+        font-size: 14px;
+        font-weight: 500;
+      }
+      .navlinks a {
+        color: var(--muted);
+        text-decoration: none;
+        margin: 0;
+      }
+      .navlinks a:hover {
+        color: var(--fg);
+      }
+      .lang-select {
+        font: 600 13px inherit;
+        color: var(--fg);
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 5px 8px;
+      }
+      @media (max-width: 720px) {
+        .navlinks a.sec {
+          display: none;
+        }
+      }
+      header.hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+        gap: 48px;
+        align-items: center;
+        padding: 72px 0 48px;
+      }
+      @media (max-width: 860px) {
+        header.hero {
+          grid-template-columns: minmax(0, 1fr);
+          gap: 36px;
+          padding-top: 44px;
+        }
+      }
+      .eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 18px;
+        padding: 6px 12px;
+        font:
+          600 11.5px/1.2 'JetBrains Mono',
+          monospace;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--accent);
+        background: var(--accent-soft);
+        border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+        border-radius: 999px;
+      }
+      .pulse {
+        width: 7px;
+        height: 7px;
+        flex: none;
+        border-radius: 50%;
+        background: var(--accent);
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 20%, transparent);
+      }
+      h1 {
+        font-size: clamp(34px, 5.4vw, 56px);
+        line-height: 1.1;
+        letter-spacing: -0.03em;
+        font-weight: 800;
+        margin: 0 0 18px;
+      }
+      h1 .grad {
+        background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+      }
+      h2 {
+        font-weight: 800;
+        letter-spacing: -0.02em;
+      }
+      .lead {
+        font-size: clamp(17px, 2vw, 19px);
+      }
+      .btn {
+        border-radius: 10px;
+        padding: 12px 20px;
+        font-weight: 600;
+        background: var(--card);
+      }
+      .btn.primary {
+        background: var(--accent);
+      }
+      .btn:hover {
+        border-color: var(--accent);
+      }
+      .trust {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 18px;
+        margin: 22px 0 0;
+        padding: 0;
+        list-style: none;
+        color: var(--muted);
+        font-size: 13px;
+      }
+      .trust li::before {
+        content: '·';
+        margin-right: 8px;
+        color: var(--accent);
+        font-weight: 800;
+      }
+      .hero-term {
+        position: relative;
+      }
+      .hero-term::before {
+        content: '';
+        position: absolute;
+        inset: 12% -4% -8% 8%;
+        z-index: 0;
+        background: color-mix(in srgb, var(--accent) 30%, transparent);
+        filter: blur(52px);
+        opacity: 0.55;
+      }
+      .term {
+        position: relative;
+        z-index: 1;
+        overflow: hidden;
+        transform: rotate(1deg);
+        background: var(--code-bg);
+        color: var(--code-fg);
+        border-radius: 14px;
+        border: 1px solid color-mix(in srgb, var(--code-fg) 14%, transparent);
+        box-shadow: 0 28px 60px rgba(15, 23, 42, 0.25);
+      }
+      .term-bar {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        padding: 12px 16px;
+        border-bottom: 1px solid color-mix(in srgb, var(--code-fg) 12%, transparent);
+      }
+      .term-bar span {
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: color-mix(in srgb, var(--code-fg) 28%, transparent);
+      }
+      .term-bar code {
+        margin-left: auto;
+        font-size: 12px;
+        color: color-mix(in srgb, var(--code-fg) 60%, transparent);
+      }
+      .term pre {
+        background: transparent;
+        border-radius: 0;
+        padding: 18px 20px 22px;
+        font-size: 12.5px;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+      }
+      .term .p {
+        color: color-mix(in srgb, var(--accent) 45%, #ffffff);
+      }
+      .term .ok {
+        color: color-mix(in srgb, var(--accent) 30%, #ffffff);
+        font-weight: 600;
+      }
+      @media (max-width: 860px) {
+        .term {
+          transform: none;
+        }
+      }
+      .card {
+        border-radius: 14px;
+        box-shadow: var(--shadow);
+      }
+      pre {
+        border-radius: 12px;
+      }
+      .wrap {
+        max-width: 1080px;
+      }
+      /* break a long command only when it cannot fit a line of its own */
+      p code,
+      li code,
+      td code,
+      figcaption code {
+        overflow-wrap: break-word;
+      }
     </style>
   </head>
   <body>
-    <div class="wrap">
-      <nav>
-        <p class="brand">mv3-remote-code-check</p>
-        <div>
-          <a href="#what" data-i18n="nav.what">What it finds</a>
-          <a href="#action" data-i18n="nav.action">GitHub Action</a>
-          <a href="https://github.com/vannt-dev/mv3-remote-code-check">GitHub</a>
-          <a href="https://www.npmjs.com/package/mv3-remote-code-check">npm</a>
-          <select id="lang" aria-label="Language">
+    <nav class="topbar" aria-label="Main">
+      <div class="wrap">
+        <a class="brand" href="#top">
+          <span class="logo" aria-hidden="true"
+            ><svg width="18" height="18" viewBox="0 0 32 32">
+              <path d="M16 6l8 3v6c0 5-3.4 9-8 11-4.6-2-8-6-8-11V9z" fill="none" stroke="#fff" stroke-width="2.4" stroke-linejoin="round" />
+              <path d="M12 16l3 3 5-6" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" /></svg
+          ></span>
+          mv3-remote-code-check
+        </a>
+        <div class="navlinks">
+          <a class="sec" href="#what" data-i18n="nav.what">What it finds</a>
+          <a class="sec" href="#action" data-i18n="nav.action">GitHub Action</a>
+          <a href="https://github.com/vannt-dev/mv3-remote-code-check">GitHub ↗</a>
+          <a href="https://www.npmjs.com/package/mv3-remote-code-check">npm ↗</a>
+          <select id="lang" class="lang-select" aria-label="Language">
             <option value="en">English</option>
             <option value="vi">Tiếng Việt</option>
           </select>
         </div>
-      </nav>
+      </div>
+    </nav>
+    <div class="wrap" id="top">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">
+            <span class="pulse" aria-hidden="true"></span><span data-i18n="hero.eyebrow">Remote code check for Manifest V3</span>
+          </p>
+          <h1 data-i18n="hero.h1">Find <span class="grad">the remote code</span> before the Chrome Web Store review does.</h1>
+          <p class="lead" data-i18n="hero.lead">
+            Manifest V3 forbids remotely hosted code, and the review reads your package without running it: a script address on another host
+            is a violation wherever it stands, even in a branch of a bundled library your extension never calls. mv3-remote-code-check reads
+            the built extension the same way and fails your build first.
+          </p>
+          <div class="cta">
+            <a class="btn primary" href="#start" data-i18n="cta.start">Get started</a>
+            <a class="btn" href="https://github.com/vannt-dev/mv3-remote-code-check#readme" data-i18n="cta.docs">Documentation</a>
+          </div>
+          <ul class="trust">
+            <li data-i18n="hero.t1">A folder, .zip or .crx</li>
+            <li data-i18n="hero.t2">No runtime dependencies</li>
+            <li>MIT</li>
+          </ul>
+        </div>
+        <div class="hero-term" aria-label="Output of real runs">
+          <div class="term">
+            <div class="term-bar"><span></span><span></span><span></span><code>mv3-remote-code-check</code></div>
+            <pre><span class="p">$</span> mv3-remote-code-check extension
+<span class="ok">extension: no remotely hosted code in 16 files</span>
 
-      <header>
-        <h1 data-i18n="hero.h1">Find the remote code before the Chrome Web Store review does.</h1>
-        <p class="lead" data-i18n="hero.lead">
-          Manifest V3 forbids remotely hosted code, and the review reads your package without running it: a script address on another host
-          is a violation wherever it stands, even in a branch of a bundled library your extension never calls. mv3-remote-code-check reads
-          the built extension the same way and fails your build first.
-        </p>
-        <div class="cta">
-          <a class="btn primary" href="#start" data-i18n="cta.start">Get started</a>
-          <a class="btn" href="https://github.com/vannt-dev/mv3-remote-code-check#readme" data-i18n="cta.docs">Documentation</a>
+<span class="p">$</span> mv3-remote-code-check bundles/esbuild-map
+bundles/esbuild-map: 2 reference(s) to remotely hosted code, which Manifest V3 forbids
+  <span class="miss">background.js:1:32  https://cdn.jsdelivr.net/npm/cdn-helper@1.2.3/worker.min.js</span>  (address on a script CDN)
+      from npm package cdn-helper via source map
+  <span class="miss">background.js:1:139  https://unpkg.com/own-lib@2.0.0/own.js</span>  (address on a script CDN)
+bundles/esbuild-map: 1 warning(s): dynamic code, which the MV3 content security policy blocks in extension pages
+  background.js:1:114  new Function(n)  (dynamic code evaluation)
+      from npm package @acme/loader via source map</pre>
+          </div>
         </div>
       </header>
-
-      <pre><span class="dim">$</span> npx mv3-remote-code-check dist
-dist: 2 reference(s) to remotely hosted code, which Manifest V3 forbids
-  <span class="miss">chunks/vendor-pdf.js:1:48213  https://cdnjs.cloudflare.com/ajax/libs/pdfobject/2.1.1/pdfobject.min.js</span>  (address on a script CDN)
-  <span class="miss">vendor/tesseract/worker.min.js:2:92596  https://cdn.jsdelivr.net/npm/@tesseract.js-data/</span>  (address on a script CDN)
-
-<span class="dim">$</span> npx mv3-remote-code-check universal-file-converter-v1.2.2.zip
-<span class="ok">universal-file-converter-v1.2.2.zip: no remotely hosted code in 34 files</span></pre>
 
       <section id="why">
         <h2 data-i18n="why.h2">Why</h2>
@@ -409,7 +695,10 @@ export default defineConfig({
         vi: {
           'nav.what': 'Tìm được gì',
           'nav.action': 'GitHub Action',
-          'hero.h1': 'Tìm remote code trước khi Chrome Web Store review tìm ra.',
+          'hero.eyebrow': 'Kiểm tra remote code cho Manifest V3',
+          'hero.h1': 'Tìm <span class="grad">remote code</span> trước khi Chrome Web Store review tìm ra.',
+          'hero.t1': 'Thư mục, .zip hoặc .crx',
+          'hero.t2': 'Không có dependency lúc chạy',
           'hero.lead':
             'Manifest V3 cấm code tải từ nơi khác, và bên review đọc gói của bạn chứ không chạy nó: một địa chỉ script trên host khác là vi phạm dù nó nằm ở đâu, kể cả trong một nhánh của thư viện đóng gói kèm mà extension không bao giờ gọi. mv3-remote-code-check đọc extension đã build theo đúng cách đó và làm build của bạn fail trước.',
           'cta.start': 'Bắt đầu',
