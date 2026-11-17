@@ -84,6 +84,8 @@ the Markdown summary name the package too. It never changes the exit code.
 
 ## CLI
 
+The CLI, the plugin and the API need Node.js 22.18 or newer.
+
 ```sh
 npx mv3-remote-code-check dist
 npx mv3-remote-code-check my-extension-1.2.0.zip --format github
