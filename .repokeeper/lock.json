@@ -1,11 +1,11 @@
 {
   "lockVersion": 1,
-  "standard": "1.5.0",
+  "standard": "1.7.0",
   "entries": [
     {
       "id": "block:.gitattributes#editorconfig",
       "module": "editorconfig",
-      "hash": "e70ac9143c0c20c9ccae58abde2993797ec8cf7885322b000654d798267c4a48",
+      "hash": "f8e8fcdd07508cb00ce0c744bd9cef34934d3cf8b05f5dc1f49ed4dfa5d413d4",
       "target": {
         "kind": "block",
         "path": ".gitattributes",
@@ -27,7 +27,7 @@
     {
       "id": "file:.editorconfig",
       "module": "editorconfig",
-      "hash": "7d9ee1988ce3177a273a01b7547b3995fcbc7e5f00528f6f76784604738f70e0",
+      "hash": "1fb565efc62d5699122d198e7ac49b1dfddc26cf8f8d107e9f4ad7433bc9e1d1",
       "target": {
         "kind": "file",
         "path": ".editorconfig"
