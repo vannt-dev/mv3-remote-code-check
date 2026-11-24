@@ -21,6 +21,15 @@ test('a script or wasm file on any host counts, with or without a query', () => 
   assert.deepEqual(findRemoteCode('s.src = "//example.org/lib.mjs"'), ['//example.org/lib.mjs']);
 });
 
+test('a script served compressed (.js.gz, .js.br) counts too', () => {
+  // @amplitude/plugin-autocapture-browser loads its visual tagging script from such an address
+  const amplitude = 'https://cdn.amplitude.com/libs/visual-tagging-selector-1.0.0-alpha.js.gz';
+  assert.deepEqual(findRemoteCode(`loadScriptOnce("${amplitude}")`), [amplitude]);
+  assert.deepEqual(findRemoteCode('x = "//example.org/a.mjs.br?v=1"'), ['//example.org/a.mjs.br?v=1']);
+  assert.deepEqual(findRemoteCode('"https://example.com/core.wasm.gz"'), ['https://example.com/core.wasm.gz']);
+  assert.deepEqual(findRemoteCode('"https://example.com/data.json.gz" "https://example.com/a.js.gzip"'), []);
+});
+
 test('script tags naming another host, or built at run time', () => {
   const [tag] = locateRemoteCode('<script async src="https://www.googletagmanager.com/gtag/js?id=G-1"></script>');
   assert.equal(tag?.rule, 'script-tag');
