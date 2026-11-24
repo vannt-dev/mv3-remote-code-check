@@ -34,9 +34,9 @@ export interface KnownSdk extends SdkHint {
 export const KNOWN_SDKS: readonly KnownSdk[] = [
   {
     sdk: 'Amplitude Browser SDK',
-    // the autocapture plugin's visual tagging and background capture scripts, the SDK's own builds
-    addresses: /^(?:https?:)?\/\/cdn\.amplitude\.com\//i,
-    packages: /^@amplitude\//,
+    // the visual tagging and background capture scripts of autocapture, which the lite build leaves out
+    addresses: /^(?:https?:)?\/\/cdn\.amplitude\.com\/libs\/(?:visual-tagging-selector|background-capture)-/i,
+    packages: /^@amplitude\/(?:analytics-browser|analytics-core|plugin-autocapture-browser)$/,
     byAddress: true,
     text:
       "Import from '@amplitude/analytics-browser/lite' (2.49.0 or later): the lite build leaves out " +

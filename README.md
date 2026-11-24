@@ -96,7 +96,7 @@ that fix and a link to the page that documents it:
 
 | SDK                     | Addresses                                                                       | Fix                                                                                                  |
 | ----------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Amplitude Browser SDK   | `cdn.amplitude.com/…` from an `@amplitude/*` package                            | import `@amplitude/analytics-browser/lite` (2.49.0+), which has no autocapture                       |
+| Amplitude Browser SDK   | autocapture scripts on `cdn.amplitude.com` from `@amplitude/analytics-browser`  | import `@amplitude/analytics-browser/lite` (2.49.0+), which has no autocapture                       |
 | Firebase Authentication | gapi and reCAPTCHA scripts from `firebase`, `@firebase/auth` or `@firebase/app` | import `firebase/auth/web-extension` (10.8.0+); popup and reCAPTCHA flows need an offscreen document |
 | Mixpanel                | `cdn.mxpnl.com/…` from `mixpanel-browser`                                       | without session replay, import `mixpanel-browser/src/loaders/loader-module-core` (2.54.0+)           |
 | Google Analytics        | `googletagmanager.com/gtag/js`, `google-analytics.com/analytics.js`             | send events with the GA4 Measurement Protocol                                                        |

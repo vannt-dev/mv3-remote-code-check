@@ -45,7 +45,12 @@ test('hintFor: an address of a known SDK from its own package', () => {
 
 test('hintFor: no hint where the advice would not fit', () => {
   // the address is the SDK's own, but another package names it
-  assert.equal(hintFor('https://cdn.amplitude.com/libs/x.js.gz', pkg('amplitude-wrapper')), undefined);
+  const tagging = 'https://cdn.amplitude.com/libs/visual-tagging-selector-1.0.0-alpha.js.gz';
+  assert.equal(hintFor(tagging, pkg('amplitude-wrapper')), undefined);
+  // an Amplitude package or script the lite build was not checked to leave out
+  assert.equal(hintFor(tagging, pkg('@amplitude/plugin-session-replay-browser')), undefined);
+  assert.equal(hintFor('https://cdn.amplitude.com/libs/analytics-browser-2.50.0-min.js.gz'), undefined);
+  assert.equal(hintFor(tagging)?.sdk, 'Amplitude Browser SDK');
   // reCAPTCHA and gapi are used by more than Firebase: without the package, no guess
   assert.equal(hintFor('https://www.google.com/recaptcha/api.js'), undefined);
   assert.equal(hintFor('https://www.google.com/recaptcha/api.js', pkg('captcha-wrapper')), undefined);
