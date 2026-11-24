@@ -5,6 +5,7 @@ import { checkManifest } from './manifest.ts';
 import { locateDynamicCode } from './dynamic.ts';
 import { zipEntries, type PackageFile } from './zip.ts';
 import { OriginFinder, type NpmPackage } from './origin.ts';
+import { hintFor, type SdkHint } from './known-sdks.ts';
 
 /** Files the review reads as code or as markup that can load code. */
 export const SCANNED = /\.(?:m?js|cjs|html?|css|json|svg|xhtml)$/i;
@@ -23,6 +24,8 @@ export interface Finding {
   detail?: string;
   /** The npm package the finding came from, when a source map or a bundler comment says so. */
   package?: NpmPackage;
+  /** The documented fix, when the finding is an address of a known SDK (Firebase Auth, Amplitude, ...). */
+  hint?: SdkHint;
 }
 
 export interface ScanOptions {
@@ -66,7 +69,8 @@ export function scanFiles(files: readonly PackageFile[], { allow = [], exclude =
       if (allowed(match)) return;
       originOf ??= origins.forFile(file, text);
       const pkg = originOf(index, line, column);
-      into.push({ file: file.name, line, column, match, rule, ...(pkg ? { package: pkg } : {}) });
+      const hint = rule === 'dynamic-code' ? undefined : hintFor(match, pkg);
+      into.push({ file: file.name, line, column, match, rule, ...(pkg ? { package: pkg } : {}), ...(hint ? { hint } : {}) });
     };
     for (const located of locateRemoteCode(text)) take(findings, located);
     if (SCRIPTS.test(file.name)) {

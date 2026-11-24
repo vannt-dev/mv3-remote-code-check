@@ -23,7 +23,7 @@ the API and the plugin. It has no runtime dependencies.
 | Rule                 | Example                                                                             |
 | -------------------- | ----------------------------------------------------------------------------------- |
 | `cdn-address`        | any address on a script CDN (cdnjs, jsDelivr, unpkg, esm.sh, …)                     |
-| `remote-script-file` | `https://example.com/lib.js`, `//host/x.mjs`, `https://host/core.wasm`              |
+| `remote-script-file` | `https://example.com/lib.js`, `//host/x.mjs`, `https://host/core.wasm`, `….js.gz`   |
 | `script-tag`         | `<script src="https://…">`                                                          |
 | `script-tag-built`   | `'<script src="' + url + '">'`, an address put together at run time                 |
 | `manifest-csp`       | `content_security_policy.extension_pages` allowing a source that is not the package |
@@ -81,6 +81,35 @@ In `--format json` the finding has a `package` field (`name`, `version` when kno
 `source-map` or `module-comment`, and the `source` path); in `sarif` the result has the properties
 `npmPackage`, `npmPackageVersion`, `npmPackageVia` and `npmPackageSource`; `github` annotations and
 the Markdown summary name the package too. It never changes the exit code.
+
+### Fix hints for known SDKs
+
+Some SDKs are a common cause of a "Blue Argon" rejection, and their makers document a build or an
+entry point without the remote scripts. When a finding is one of their addresses, the report adds
+that fix and a link to the page that documents it:
+
+```
+  bg.js:1:116770  https://apis.google.com/js/api.js  (script file on another host)
+      from npm package @firebase/auth@1.13.11 via source map
+      fix: Firebase Authentication: Import from 'firebase/auth/web-extension' instead of 'firebase/auth' (Firebase 10.8.0 or later). Popup, redirect and reCAPTCHA sign-in then need an offscreen document. See https://firebase.google.com/docs/auth/web/chrome-extension
+```
+
+| SDK                     | Addresses                                                                       | Fix                                                                                                  |
+| ----------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| Amplitude Browser SDK   | `cdn.amplitude.com/…` from an `@amplitude/*` package                            | import `@amplitude/analytics-browser/lite` (2.49.0+), which has no autocapture                       |
+| Firebase Authentication | gapi and reCAPTCHA scripts from `firebase`, `@firebase/auth` or `@firebase/app` | import `firebase/auth/web-extension` (10.8.0+); popup and reCAPTCHA flows need an offscreen document |
+| Mixpanel                | `cdn.mxpnl.com/…` from `mixpanel-browser`                                       | without session replay, import `mixpanel-browser/src/loaders/loader-module-core` (2.54.0+)           |
+| Google Analytics        | `googletagmanager.com/gtag/js`, `google-analytics.com/analytics.js`             | send events with the GA4 Measurement Protocol                                                        |
+
+The hint is given when the finding comes from that SDK's package (by source map or bundler
+comment). Amplitude, Mixpanel and Google Analytics addresses are the SDK's own, so they get the hint
+also when the package is not known; the gapi and reCAPTCHA addresses do not, since other libraries
+load them too. A hint is advice to check against your version of the SDK, not a promise that the
+review passes: rebuild and run the check again.
+
+In `--format json` such a finding has a `hint` field (`sdk`, `text`, `url`); in `sarif` the result
+has the properties `fixSdk`, `fixHint` and `fixUrl`; `github` annotations and the Markdown summary
+carry the hint too. It never changes the exit code. The list is `KNOWN_SDKS` in the API.
 
 ## CLI
 
@@ -216,7 +245,7 @@ The plugin does not read the config file; pass `allow` and `exclude` to it direc
 import { scanPath, findRemoteCode, stripRemoteCode, checkManifest } from 'mv3-remote-code-check';
 
 const { files, findings, warnings } = scanPath('dist'); // or a .zip / .crx
-// findings: [{ file, line, column, match, rule, package? }]
+// findings: [{ file, line, column, match, rule, package?, hint? }]
 // warnings: the same shape, rule 'dynamic-code'
 ```
 
