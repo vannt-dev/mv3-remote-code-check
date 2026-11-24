@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.0](https://github.com/vannt-dev/mv3-remote-code-check/compare/v0.6.0...v0.7.0) (2026-11-24)
+
+
+### Features
+
+* print a documented fix next to findings from known SDKs ([#28](https://github.com/vannt-dev/mv3-remote-code-check/issues/28)) ([2513f82](https://github.com/vannt-dev/mv3-remote-code-check/commit/2513f82baa46f53298f726f205bdad745929c2e3))
+
 ## [0.6.0](https://github.com/vannt-dev/mv3-remote-code-check/compare/v0.5.0...v0.6.0) (2026-10-31)
 
 
