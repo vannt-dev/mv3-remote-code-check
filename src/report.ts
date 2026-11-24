@@ -27,9 +27,18 @@ function origin(f: Finding, long = true): string {
   return `probably from npm package ${id}${long ? ' (guessed from a bundler comment)' : ''}`;
 }
 
+/** A known SDK's fix for a finding, in one line. Empty without one. */
+const fix = (f: Finding) => (f.hint ? `${f.hint.sdk}: ${f.hint.text} See ${f.hint.url}` : '');
+
 export function formatText(target: string, { files, findings, warnings }: ScanResult, level: DynamicLevel = 'warning'): string {
   const list = (items: Finding[]) =>
-    items.map((f) => `  ${where(f)}  ${shorten(f.match)}  (${RULE_TEXT[f.rule]})\n${f.package ? `      ${origin(f)}\n` : ''}`).join('');
+    items
+      .map(
+        (f) =>
+          `  ${where(f)}  ${shorten(f.match)}  (${RULE_TEXT[f.rule]})\n` +
+          `${f.package ? `      ${origin(f)}\n` : ''}${f.hint ? `      fix: ${fix(f)}\n` : ''}`
+      )
+      .join('');
   let text = findings.length
     ? `${target}: ${findings.length} reference(s) to remotely hosted code, which Manifest V3 forbids\n${list(findings)}`
     : `${target}: no remotely hosted code in ${files} files\n`;
@@ -58,7 +67,8 @@ export function formatGithub(target: string, result: ScanResult, fileRoot: strin
     props.push(`title=${escapeProperty(title ?? `Remote code: ${RULE_TEXT[f.rule]}`)}`);
     const place = fileRoot === null ? `${target}!/${where(f)}: ` : '';
     const from = f.package ? ` (${origin(f, false)})` : '';
-    return `::${command} ${props.join(',')}::${escapeData(`${place}${shorten(f.match, 300)}${from}`)}`;
+    const hint = f.hint ? `. Fix: ${fix(f)}` : '';
+    return `::${command} ${props.join(',')}::${escapeData(`${place}${shorten(f.match, 300)}${from}${hint}`)}`;
   };
   const out = [...result.findings.map(annotate('error')), ...result.warnings.map(annotate(level, DYNAMIC_TITLE))];
   out.push(formatText(target, result, level).trimEnd());
@@ -103,7 +113,9 @@ export function formatSarif(
       return {
         ruleId: f.rule,
         level: f.rule === 'dynamic-code' ? level : 'error',
-        message: { text: `${place}${shorten(f.match, 300)} (${RULE_TEXT[f.rule]}${f.package ? `; ${origin(f)}` : ''})` },
+        message: {
+          text: `${place}${shorten(f.match, 300)} (${RULE_TEXT[f.rule]}${f.package ? `; ${origin(f)}` : ''})${f.hint ? `. Fix: ${fix(f)}` : ''}`,
+        },
         locations: [
           {
             physicalLocation: {
@@ -112,13 +124,18 @@ export function formatSarif(
             },
           },
         ],
-        ...(f.package
+        ...(f.package || f.hint
           ? {
               properties: {
-                npmPackage: f.package.name,
-                ...(f.package.version ? { npmPackageVersion: f.package.version } : {}),
-                npmPackageVia: f.package.via,
-                npmPackageSource: f.package.source,
+                ...(f.package
+                  ? {
+                      npmPackage: f.package.name,
+                      ...(f.package.version ? { npmPackageVersion: f.package.version } : {}),
+                      npmPackageVia: f.package.via,
+                      npmPackageSource: f.package.source,
+                    }
+                  : {}),
+                ...(f.hint ? { fixSdk: f.hint.sdk, fixHint: f.hint.text, fixUrl: f.hint.url } : {}),
               },
             }
           : {}),
@@ -151,7 +168,9 @@ export function formatMarkdown(target: string, { files, findings, warnings }: Sc
     items
       .map(
         (f) =>
-          `| \`${where(f)}\` | ${RULE_TEXT[f.rule]}${f.package ? `, ${origin(f, false)}` : ''} | \`${shorten(f.match, 120).replaceAll('|', '\\|')}\` |\n`
+          `| \`${where(f)}\` | ${RULE_TEXT[f.rule]}${f.package ? `, ${origin(f, false)}` : ''}` +
+          `${f.hint ? `<br>**Fix (${f.hint.sdk}):** ${f.hint.text.replaceAll('|', '\\|')} [Docs](${f.hint.url})` : ''} ` +
+          `| \`${shorten(f.match, 120).replaceAll('|', '\\|')}\` |\n`
       )
       .join('');
   let text = findings.length

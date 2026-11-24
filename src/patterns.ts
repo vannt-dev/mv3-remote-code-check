@@ -48,13 +48,16 @@ const URL_CHAR = '[^\\s"\'`<>\\\\$)]';
 
 const CDN_ADDRESS = `(?:https?:)?//(?:${HOSTS})(?![\\w.-])${URL_CHAR}*`;
 
+// The ending of a script or WebAssembly file, also when it is served compressed (.js.gz, .js.br).
+const SCRIPT_FILE = '\\.(?:m?js|wasm)(?:\\.(?:gz|br))?';
+
 // The kinds of finding, in the order of the alternatives of REMOTE_CODE.
 const RULES: readonly (readonly [Rule, string])[] = [
   ['cdn-address', CDN_ADDRESS],
-  // A script or WebAssembly file on any host, with or without a query.
-  ['remote-script-file', `https?://${URL_CHAR}+?\\.(?:m?js|wasm)(?:[?#]${URL_CHAR}*)?(?![\\w./-])`],
+  // A script or WebAssembly file on any host, also compressed, with or without a query.
+  ['remote-script-file', `https?://${URL_CHAR}+?${SCRIPT_FILE}(?:[?#]${URL_CHAR}*)?(?![\\w./-])`],
   // The same without a scheme, which only an address between quotes can be.
-  ['remote-script-file', `(?<=["'\`])//[a-z0-9.-]+\\.[a-z]{2,}/${URL_CHAR}*?\\.(?:m?js|wasm)(?:[?#]${URL_CHAR}*)?(?![\\w./-])`],
+  ['remote-script-file', `(?<=["'\`])//[a-z0-9.-]+\\.[a-z]{2,}/${URL_CHAR}*?${SCRIPT_FILE}(?:[?#]${URL_CHAR}*)?(?![\\w./-])`],
   // A script tag that names another host.
   ['script-tag', `<script\\b[^>]*?\\ssrc\\s*=\\s*["']?(?:https?:)?//${URL_CHAR}*`],
   // A script tag whose address is put together when the code runs.
